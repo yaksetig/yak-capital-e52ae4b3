@@ -928,7 +928,7 @@ const TradingDashboard = () => {
           </div>
           <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredChartData}>
+              <LineChart data={filteredChartData} isAnimationActive={false}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                 <XAxis 
                   dataKey="date" 
@@ -1031,7 +1031,7 @@ const TradingDashboard = () => {
             </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredChartData}>
+                <LineChart data={filteredChartData} isAnimationActive={false}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
@@ -1066,7 +1066,7 @@ const TradingDashboard = () => {
             </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={filteredChartData}>
+                <ComposedChart data={filteredChartData} isAnimationActive={false}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
