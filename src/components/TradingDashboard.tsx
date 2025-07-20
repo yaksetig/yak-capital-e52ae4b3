@@ -53,7 +53,6 @@ const TradingDashboard = () => {
   const LOOKBACK_DAYS = 201;
   const SMA_PERIODS = [5, 20, 50, 100, 200];
   const EMA_PERIODS = [5, 20, 50, 100, 200];
-  const RSI_PERIOD = 14;
   const BB_PERIOD = 20;
   const BB_MULTIPLIER = 2;
   const MACD_FAST = 12;
@@ -62,6 +61,20 @@ const TradingDashboard = () => {
   const STOCH_K_PERIOD = 14;
   const STOCH_D_PERIOD = 3;
   const ADX_PERIOD = 14;
+
+  // Dynamic RSI period based on time range
+  const getRSIPeriod = (timeRange: string) => {
+    switch(timeRange) {
+      case '7': return 7;
+      case '30': return 30;
+      case '60': return 60;
+      case '90': return 90;
+      case 'all': return 14; // default
+      default: return 14;
+    }
+  };
+
+  const RSI_PERIOD = getRSIPeriod(timeRange);
 
   // Helper function to calculate True Range
   const calculateTrueRange = (high, low, previousClose) => {
@@ -696,7 +709,8 @@ const TradingDashboard = () => {
       priceAboveVWAP,
       // Explicitly add sma50 and sma200 for TypeScript
       sma50: currentSMAs.sma50,
-      sma200: currentSMAs.sma200
+      sma200: currentSMAs.sma200,
+      rsiPeriod: RSI_PERIOD // Add RSI period to indicators
     };
 
     // Cycle analysis
@@ -770,7 +784,7 @@ const TradingDashboard = () => {
     }
 
     return { chartData: extendedChartData, indicators, cycles, cycleStrength, cycleProjections };
-  }, [rawData, showCycleAnalysis]);
+  }, [rawData, showCycleAnalysis, timeRange]); // Added timeRange to dependencies
 
   useEffect(() => {
     fetchBinanceData();
@@ -1016,10 +1030,10 @@ const TradingDashboard = () => {
               <Brain className="w-4 h-4 text-neutral" />
               <UITooltip>
                 <TooltipTrigger>
-                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">RSI Momentum</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">RSI ({indicators.rsiPeriod}) Momentum</h3>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-sm">RSI measures momentum. Values above 70 suggest overbought conditions, below 30 suggest oversold conditions.</p>
+                  <p className="text-sm">RSI measures momentum using {indicators.rsiPeriod} periods. Values above 70 suggest overbought conditions, below 30 suggest oversold conditions.</p>
                 </TooltipContent>
               </UITooltip>
             </div>
@@ -1229,10 +1243,10 @@ const TradingDashboard = () => {
 
         {/* Indicator Charts - Updated to include Stochastic and ADX */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* RSI Chart */}
+          {/* RSI Chart - Updated with dynamic title and period */}
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-semibold text-foreground">RSI (14)</h2>
+              <h2 className="text-xl font-semibold text-foreground">RSI ({indicators.rsiPeriod})</h2>
               <TimeRangeSelector 
                 selectedRange={timeRange}
                 onRangeChange={setTimeRange}
@@ -1246,7 +1260,7 @@ const TradingDashboard = () => {
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
                   <Tooltip 
-                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'RSI']}
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', `RSI (${indicators.rsiPeriod})`]}
                     labelFormatter={(label) => `Date: ${formatDate(label)}`}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -1258,7 +1272,7 @@ const TradingDashboard = () => {
                   <ReferenceLine y={70} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
                   <ReferenceLine y={30} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
                   <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-                  <Line type="monotone" dataKey="rsi" stroke="hsl(var(--accent))" strokeWidth={2} name="RSI" dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="rsi" stroke="hsl(var(--accent))" strokeWidth={2} name={`RSI (${indicators.rsiPeriod})`} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -1396,7 +1410,7 @@ const TradingDashboard = () => {
           </Card>
         </div>
 
-        {/* Technical Indicators Summary - Updated */}
+        {/* Technical Indicators Summary - Keep existing code */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Technical Indicators Summary</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1437,7 +1451,7 @@ const TradingDashboard = () => {
               <h3 className="text-lg font-semibold mb-3 text-accent">Momentum Analysis</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>RSI Signal:</span>
+                  <span>RSI ({indicators.rsiPeriod}) Signal:</span>
                   <span className={`font-medium ${
                     indicators.rsiSignal === 'Overbought' ? 'text-bearish' : 
                     indicators.rsiSignal === 'Oversold' ? 'text-bullish' : 'text-neutral'
