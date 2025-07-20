@@ -35,8 +35,11 @@ const TradingDashboard = () => {
     ema20: true,
     ema50: true,
     bbUpper: true,
-    bbMiddle: true,
     bbLower: true,
+    vwap: true,
+    cycle0: false,
+    cycle1: false,
+    cycle2: false
   });
 
   // Cycle analysis state
@@ -950,7 +953,6 @@ const TradingDashboard = () => {
                 
                 {visibleLines.bbUpper && <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} />}
                 {visibleLines.bbLower && <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} />}
-                {visibleLines.bbMiddle && <Line type="monotone" dataKey="bbMiddle" stroke="hsl(var(--muted-foreground))" strokeWidth={1} name="BB Middle" dot={false} />}
                 
                 {visibleLines.sma20 && <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} />}
                 {visibleLines.sma50 && <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} />}
@@ -958,7 +960,7 @@ const TradingDashboard = () => {
                 {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />}
                 
                 {/* VWAP Line */}
-                <Line type="monotone" dataKey="vwap" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3" name="VWAP" dot={false} />
+                {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3" name="VWAP" dot={false} />}
                 
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
                 
