@@ -59,6 +59,9 @@ const TradingDashboard = () => {
   const MACD_FAST = 12;
   const MACD_SLOW = 26;
   const MACD_SIGNAL = 9;
+  const STOCH_K_PERIOD = 14;
+  const STOCH_D_PERIOD = 3;
+  const ADX_PERIOD = 14;
 
   // Helper function to calculate True Range
   const calculateTrueRange = (high, low, previousClose) => {
@@ -267,6 +270,137 @@ const TradingDashboard = () => {
     };
   };
 
+  // Helper function to calculate Stochastic Oscillator
+  const calculateStochastic = (candles, kPeriod, dPeriod) => {
+    if (candles.length < kPeriod) return null;
+    
+    const recentCandles = candles.slice(-kPeriod);
+    
+    // Get highest high and lowest low over the period
+    let highestHigh = -Infinity;
+    let lowestLow = Infinity;
+    
+    for (let i = 0; i < recentCandles.length; i++) {
+      const high = parseFloat(recentCandles[i][2]);
+      const low = parseFloat(recentCandles[i][3]);
+      
+      if (high > highestHigh) highestHigh = high;
+      if (low < lowestLow) lowestLow = low;
+    }
+    
+    const currentClose = parseFloat(candles[candles.length - 1][4]);
+    
+    // Calculate %K
+    const stochK = ((currentClose - lowestLow) / (highestHigh - lowestLow)) * 100;
+    
+    return { stochK, highestHigh, lowestLow };
+  };
+
+  // Helper function to calculate Stochastic Array for chart
+  const calculateStochasticArray = (candles, kPeriod, dPeriod) => {
+    if (candles.length < kPeriod + dPeriod) return null;
+    
+    const stochKArray = [];
+    
+    // Calculate %K for each period
+    for (let i = kPeriod - 1; i < candles.length; i++) {
+      const periodCandles = candles.slice(i - kPeriod + 1, i + 1);
+      
+      let highestHigh = -Infinity;
+      let lowestLow = Infinity;
+      
+      for (let j = 0; j < periodCandles.length; j++) {
+        const high = parseFloat(periodCandles[j][2]);
+        const low = parseFloat(periodCandles[j][3]);
+        
+        if (high > highestHigh) highestHigh = high;
+        if (low < lowestLow) lowestLow = low;
+      }
+      
+      const currentClose = parseFloat(candles[i][4]);
+      const stochK = ((currentClose - lowestLow) / (highestHigh - lowestLow)) * 100;
+      stochKArray.push(stochK);
+    }
+    
+    // Calculate %D (SMA of %K)
+    const stochDArray = [];
+    for (let i = dPeriod - 1; i < stochKArray.length; i++) {
+      const dPeriodK = stochKArray.slice(i - dPeriod + 1, i + 1);
+      const stochD = dPeriodK.reduce((sum, k) => sum + k, 0) / dPeriod;
+      stochDArray.push(stochD);
+    }
+    
+    return {
+      stochK: stochKArray[stochKArray.length - 1],
+      stochD: stochDArray[stochDArray.length - 1],
+      stochKArray,
+      stochDArray
+    };
+  };
+
+  // Helper function to calculate ADX (Average Directional Index)
+  const calculateADX = (candles, period) => {
+    if (candles.length < period + 1) return null;
+    
+    const trArray = [];
+    const plusDMArray = [];
+    const minusDMArray = [];
+    
+    // Calculate True Range, +DM, and -DM
+    for (let i = 1; i < candles.length; i++) {
+      const high = parseFloat(candles[i][2]);
+      const low = parseFloat(candles[i][3]);
+      const close = parseFloat(candles[i][4]);
+      const prevHigh = parseFloat(candles[i-1][2]);
+      const prevLow = parseFloat(candles[i-1][3]);
+      const prevClose = parseFloat(candles[i-1][4]);
+      
+      // True Range
+      const tr1 = high - low;
+      const tr2 = Math.abs(high - prevClose);
+      const tr3 = Math.abs(low - prevClose);
+      const tr = Math.max(tr1, tr2, tr3);
+      trArray.push(tr);
+      
+      // Directional Movement
+      const highDiff = high - prevHigh;
+      const lowDiff = prevLow - low;
+      
+      const plusDM = (highDiff > lowDiff && highDiff > 0) ? highDiff : 0;
+      const minusDM = (lowDiff > highDiff && lowDiff > 0) ? lowDiff : 0;
+      
+      plusDMArray.push(plusDM);
+      minusDMArray.push(minusDM);
+    }
+    
+    if (trArray.length < period) return null;
+    
+    // Calculate smoothed averages
+    let atr = trArray.slice(0, period).reduce((sum, tr) => sum + tr, 0) / period;
+    let plusDI = plusDMArray.slice(0, period).reduce((sum, dm) => sum + dm, 0) / period;
+    let minusDI = minusDMArray.slice(0, period).reduce((sum, dm) => sum + dm, 0) / period;
+    
+    // Smooth the values (Wilder's smoothing)
+    for (let i = period; i < trArray.length; i++) {
+      atr = ((atr * (period - 1)) + trArray[i]) / period;
+      plusDI = ((plusDI * (period - 1)) + plusDMArray[i]) / period;
+      minusDI = ((minusDI * (period - 1)) + minusDMArray[i]) / period;
+    }
+    
+    // Calculate DI+ and DI-
+    const plusDIPercent = (plusDI / atr) * 100;
+    const minusDIPercent = (minusDI / atr) * 100;
+    
+    // Calculate DX
+    const dx = Math.abs(plusDIPercent - minusDIPercent) / (plusDIPercent + minusDIPercent) * 100;
+    
+    return {
+      adx: dx,
+      plusDI: plusDIPercent,
+      minusDI: minusDIPercent
+    };
+  };
+
   const fetchBinanceData = async () => {
     setLoading(true);
     setError(null);
@@ -379,6 +513,12 @@ const TradingDashboard = () => {
     const currentATR = calculateATR(rawData, 14);
     const currentVWAP = calculateVWAP(rawData);
     
+    // Calculate Stochastic Oscillator
+    const stochasticResult = calculateStochasticArray(rawData, STOCH_K_PERIOD, STOCH_D_PERIOD);
+    
+    // Calculate ADX
+    const adxResult = calculateADX(rawData, ADX_PERIOD);
+
     const currentPrice = prices[prices.length - 1];
     
     // Ensure SMAs exist before comparison
@@ -405,15 +545,27 @@ const TradingDashboard = () => {
       rsiSignal = "Neutral";
     }
 
-    const priceAboveSMA20 = currentSMAs.sma20 ? currentPrice > currentSMAs.sma20 : false;
-    const priceAboveSMA50 = currentSMAs.sma50 ? currentPrice > currentSMAs.sma50 : false;
-    const priceAboveSMA200 = currentSMAs.sma200 ? currentPrice > currentSMAs.sma200 : false;
-    const priceAboveEMA20 = currentEMAs.ema20 ? currentPrice > currentEMAs.ema20 : false;
-    const priceAboveEMA50 = currentEMAs.ema50 ? currentPrice > currentEMAs.ema50 : false;
-    const priceAboveVWAP = currentVWAP ? currentPrice > currentVWAP : false;
-    const priceNearBBLower = bbLower !== null && bbMiddle !== null ? currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1) : false;
-    const sma20AboveSMA50 = (currentSMAs.sma20 && currentSMAs.sma50) ? currentSMAs.sma20 > currentSMAs.sma50 : false;
-    const sma50AboveSMA200 = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
+    // Stochastic signal
+    let stochSignal = "Neutral";
+    if (stochasticResult) {
+      if (stochasticResult.stochK < 20 && stochasticResult.stochD < 20) {
+        stochSignal = "Oversold";
+      } else if (stochasticResult.stochK > 80 && stochasticResult.stochD > 80) {
+        stochSignal = "Overbought";
+      }
+    }
+
+    // ADX trend strength signal
+    let trendStrength = "Unknown";
+    if (adxResult) {
+      if (adxResult.adx > 25) {
+        trendStrength = "Strong Trend";
+      } else if (adxResult.adx > 20) {
+        trendStrength = "Moderate Trend";
+      } else {
+        trendStrength = "Weak/Ranging";
+      }
+    }
 
     let bullishScore = 0;
     if (priceAboveSMA20) bullishScore++;
@@ -428,6 +580,7 @@ const TradingDashboard = () => {
     if (rsiSignal === "Oversold") bullishScore++;
     if (priceNearBBLower) bullishScore++;
     if (macdResult && macdResult.crossover === "bullish_crossover") bullishScore++;
+    if (stochSignal === "Oversold") bullishScore++; // Add Stochastic to bullish score
 
     let marketSentiment;
     if (bullishScore >= 8) marketSentiment = "bullish";
@@ -468,6 +621,13 @@ const TradingDashboard = () => {
         }
       }
 
+      // Stochastic for this point
+      const stochPoint = calculateStochastic(candlesUpToThis, STOCH_K_PERIOD, STOCH_D_PERIOD);
+      const stochArrayPoint = calculateStochasticArray(candlesUpToThis, STOCH_K_PERIOD, STOCH_D_PERIOD);
+      
+      // ADX for this point
+      const adxPoint = calculateADX(candlesUpToThis, ADX_PERIOD);
+
       return {
         date: date.toISOString().split('T')[0],
         timestamp: timestamp,
@@ -485,7 +645,10 @@ const TradingDashboard = () => {
         macdSignal: macdSig,
         macdHistogram: macdHist,
         atr: atr,
-        vwap: vwapArray[index]
+        vwap: vwapArray[index],
+        stochK: stochArrayPoint ? stochArrayPoint.stochK : null,
+        stochD: stochArrayPoint ? stochArrayPoint.stochD : null,
+        adx: adxPoint ? adxPoint.adx : null
       };
     });
 
@@ -504,6 +667,13 @@ const TradingDashboard = () => {
       macdCrossover: macdResult?.crossover || null,
       atr: currentATR,
       vwap: currentVWAP,
+      stochK: stochasticResult?.stochK || null,
+      stochD: stochasticResult?.stochD || null,
+      stochSignal,
+      adx: adxResult?.adx || null,
+      plusDI: adxResult?.plusDI || null,
+      minusDI: adxResult?.minusDI || null,
+      trendStrength,
       bullishScore,
       marketSentiment,
       crossSignal,
@@ -820,8 +990,8 @@ const TradingDashboard = () => {
           </CollapsibleContent>
         </Collapsible>
         
-        {/* Key Metrics Grid - Removed Technical Sentiment card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Key Metrics Grid - Updated to include Stochastic and ADX */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="p-4 shadow-card border-border">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-primary" />
@@ -835,10 +1005,10 @@ const TradingDashboard = () => {
               <Brain className="w-4 h-4 text-neutral" />
               <UITooltip>
                 <TooltipTrigger>
-                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Market Momentum</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">RSI Momentum</h3>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-sm">RSI (Relative Strength Index) measures momentum. Values above 70 suggest overbought conditions, below 30 suggest oversold conditions.</p>
+                  <p className="text-sm">RSI measures momentum. Values above 70 suggest overbought conditions, below 30 suggest oversold conditions.</p>
                 </TooltipContent>
               </UITooltip>
             </div>
@@ -848,6 +1018,34 @@ const TradingDashboard = () => {
               </p>
               <span className={`text-sm font-medium ${getRSIColor(indicators.rsi)}`}>
                 {indicators.rsi ? getRSIDescription(indicators.rsi) : ''}
+              </span>
+            </div>
+          </Card>
+
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-accent" />
+              <UITooltip>
+                <TooltipTrigger>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Stochastic</h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Stochastic Oscillator measures momentum. Values above 80 suggest overbought, below 20 suggest oversold conditions.</p>
+                </TooltipContent>
+              </UITooltip>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className={`text-xl font-bold ${
+                indicators.stochSignal === 'Overbought' ? 'text-bearish' : 
+                indicators.stochSignal === 'Oversold' ? 'text-bullish' : 'text-neutral'
+              }`}>
+                {indicators.stochK ? indicators.stochK.toFixed(0) : 'N/A'}
+              </p>
+              <span className={`text-sm font-medium ${
+                indicators.stochSignal === 'Overbought' ? 'text-bearish' : 
+                indicators.stochSignal === 'Oversold' ? 'text-bullish' : 'text-neutral'
+              }`}>
+                {indicators.stochSignal}
               </span>
             </div>
           </Card>
@@ -864,29 +1062,27 @@ const TradingDashboard = () => {
               )}
               <UITooltip>
                 <TooltipTrigger>
-                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Fear & Greed</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">ADX Trend</h3>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-sm">The Fear & Greed Index measures market emotions. Extreme fear can indicate buying opportunities, while extreme greed may suggest caution.</p>
+                  <p className="text-sm">ADX measures trend strength. Above 25 indicates strong trend, below 20 suggests weak/ranging market.</p>
                 </TooltipContent>
               </UITooltip>
             </div>
-            {fearGreedLoading ? (
-              <p className="text-sm text-muted-foreground">Loading...</p>
-            ) : fearGreedError ? (
-              <p className="text-xs text-destructive">Error loading</p>
-            ) : fearGreedData ? (
-              <div className="flex items-center gap-2">
-                <p className={`text-xl font-bold ${getFearGreedColor(fearGreedData.value_classification)}`}>
-                  {fearGreedData.value}
-                </p>
-                <span className={`text-sm font-medium ${getFearGreedColor(fearGreedData.value_classification)}`}>
-                  {fearGreedData.value_classification}
-                </span>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">N/A</p>
-            )}
+            <div className="flex items-center gap-2">
+              <p className={`text-lg font-bold ${
+                indicators.trendStrength === 'Strong Trend' ? 'text-bullish' : 
+                indicators.trendStrength === 'Moderate Trend' ? 'text-neutral' : 'text-muted-foreground'
+              }`}>
+                {indicators.adx ? indicators.adx.toFixed(0) : 'N/A'}
+              </p>
+              <span className={`text-sm font-medium ${
+                indicators.trendStrength === 'Strong Trend' ? 'text-bullish' : 
+                indicators.trendStrength === 'Moderate Trend' ? 'text-neutral' : 'text-muted-foreground'
+              }`}>
+                {indicators.trendStrength}
+              </span>
+            </div>
           </Card>
         </div>
 
@@ -1020,7 +1216,7 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
-        {/* Indicator Charts */}
+        {/* Indicator Charts - Updated to include Stochastic and ADX */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* RSI Chart */}
           <Card className="p-6 shadow-card border-border">
@@ -1117,12 +1313,82 @@ const TradingDashboard = () => {
               </ResponsiveContainer>
             </div>
           </Card>
+
+          {/* Stochastic Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Stochastic (14,3)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value, name) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', name]}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={80} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
+                  <ReferenceLine y={20} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
+                  <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
+                  <Line type="monotone" dataKey="stochK" stroke="hsl(var(--primary))" strokeWidth={2} name="%K" dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="stochD" stroke="hsl(var(--chart-1))" strokeWidth={2} name="%D" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* ADX Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">ADX Trend Strength (14)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[0, 60]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'ADX']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={25} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Strong Trend" />
+                  <ReferenceLine y={20} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="Moderate" />
+                  <Line type="monotone" dataKey="adx" stroke="hsl(var(--chart-2))" strokeWidth={2} name="ADX" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
         </div>
 
-        {/* Technical Indicators Summary */}
+        {/* Technical Indicators Summary - Updated */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Technical Indicators Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             {/* Trend Analysis */}
             <div>
@@ -1169,13 +1435,45 @@ const TradingDashboard = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>RSI Value:</span>
-                  <span className="font-medium">{indicators.rsi ? indicators.rsi.toFixed(1) : 'N/A'}</span>
+                  <span>Stochastic:</span>
+                  <span className={`font-medium ${
+                    indicators.stochSignal === 'Overbought' ? 'text-bearish' : 
+                    indicators.stochSignal === 'Oversold' ? 'text-bullish' : 'text-neutral'
+                  }`}>
+                    {indicators.stochSignal}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>MACD vs Signal:</span>
                   <span className={`font-medium ${indicators.macd && indicators.macdSignal && indicators.macd > indicators.macdSignal ? 'text-bullish' : 'text-bearish'}`}>
                     {indicators.macd && indicators.macdSignal ? (indicators.macd > indicators.macdSignal ? 'Above' : 'Below') : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trend Strength */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-chart-2">Trend Strength</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>ADX Strength:</span>
+                  <span className={`font-medium ${
+                    indicators.trendStrength === 'Strong Trend' ? 'text-bullish' : 
+                    indicators.trendStrength === 'Moderate Trend' ? 'text-neutral' : 'text-muted-foreground'
+                  }`}>
+                    {indicators.trendStrength}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>ADX Value:</span>
+                  <span className="font-medium">{indicators.adx ? indicators.adx.toFixed(1) : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Usage:</span>
+                  <span className="font-medium text-muted-foreground text-sm">
+                    {indicators.trendStrength === 'Strong Trend' ? 'Follow trends' :
+                     indicators.trendStrength === 'Moderate Trend' ? 'Caution' : 'Range trading'}
                   </span>
                 </div>
               </div>
@@ -1207,12 +1505,12 @@ const TradingDashboard = () => {
             </div>
           </div>
 
-          {/* Overall Sentiment */}
+          {/* Overall Sentiment - Updated bullish score denominator */}
           <div className="mt-6 p-4 rounded-lg bg-card border">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Overall Market Sentiment</h3>
-                <p className="text-sm text-muted-foreground">Based on {indicators.bullishScore}/12 bullish signals</p>
+                <p className="text-sm text-muted-foreground">Based on {indicators.bullishScore}/13 bullish signals</p>
               </div>
               <div className="text-right">
                 <p className={`text-2xl font-bold capitalize ${getSentimentColor(indicators.marketSentiment)}`}>
@@ -1225,7 +1523,7 @@ const TradingDashboard = () => {
                       indicators.marketSentiment === 'bearish' ? 'bg-bearish' : 'bg-neutral'
                     }`}
                     style={{
-                      width: `${(indicators.bullishScore / 12) * 100}%`
+                      width: `${(indicators.bullishScore / 13) * 100}%`
                     }}
                   ></div>
                 </div>
