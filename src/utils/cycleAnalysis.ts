@@ -8,14 +8,34 @@ function fft(signal: ComplexNumber[]): ComplexNumber[] {
   const N = signal.length;
   if (N <= 1) return signal;
   
+  // Pad to next power of 2 if necessary
+  if (N & (N - 1)) {
+    const nextPowerOf2 = Math.pow(2, Math.ceil(Math.log2(N)));
+    const padded = [...signal];
+    while (padded.length < nextPowerOf2) {
+      padded.push({ re: 0, im: 0 });
+    }
+    return fft(padded).slice(0, N);
+  }
+  
   // Recursive FFT (simplified version)
   const even = fft(signal.filter((_, i) => i % 2 === 0));
   const odd = fft(signal.filter((_, i) => i % 2 === 1));
   
   const result = new Array(N);
   for (let k = 0; k < N / 2; k++) {
+    // Ensure we don't access undefined indices
+    if (k >= even.length || k >= odd.length) {
+      result[k] = { re: 0, im: 0 };
+      result[k + N / 2] = { re: 0, im: 0 };
+      continue;
+    }
+    
     const t = { re: Math.cos(-2 * Math.PI * k / N), im: Math.sin(-2 * Math.PI * k / N) };
-    const oddK = { re: odd[k].re * t.re - odd[k].im * t.im, im: odd[k].re * t.im + odd[k].im * t.re };
+    const oddK = { 
+      re: odd[k].re * t.re - odd[k].im * t.im, 
+      im: odd[k].re * t.im + odd[k].im * t.re 
+    };
     
     result[k] = { re: even[k].re + oddK.re, im: even[k].im + oddK.im };
     result[k + N / 2] = { re: even[k].re - oddK.re, im: even[k].im - oddK.im };
@@ -36,39 +56,50 @@ export interface CyclePeak {
 export function analyzeCycles(prices: number[]): CyclePeak[] {
   if (prices.length < 8) return []; // Need minimum data points
   
-  // Convert prices to complex numbers for FFT
-  const signal: ComplexNumber[] = prices.map(p => ({ re: p, im: 0 }));
-  
-  // Apply FFT
-  const spectrum = fft(signal);
-  
-  // Calculate magnitude and find dominant frequencies
-  const magnitudes = spectrum.map(c => Math.sqrt(c.re * c.re + c.im * c.im));
-  
-  // Find peaks (dominant cycles)
-  const peaks: CyclePeak[] = [];
-  const maxMagnitude = Math.max(...magnitudes.slice(1, magnitudes.length / 2));
-  
-  for (let i = 1; i < magnitudes.length / 2; i++) {
-    if (magnitudes[i] > magnitudes[i-1] && magnitudes[i] > magnitudes[i+1]) {
-      const period = prices.length / i; // Convert frequency to period
-      const magnitude = magnitudes[i];
-      const strength = magnitude / maxMagnitude; // Normalize strength
-      
-      // Only include cycles with meaningful periods (between 3 and half the data length)
-      if (period >= 3 && period <= prices.length / 2 && strength > 0.1) {
-        peaks.push({ 
-          frequency: i, 
-          period: period, 
-          magnitude: magnitude,
-          strength: strength,
-          confidence: Math.min(strength * 2, 1) // Simple confidence calculation
-        });
-      }
-    }
+  // Add input validation
+  if (prices.some(p => typeof p !== 'number' || isNaN(p))) {
+    console.warn('Invalid price data detected, skipping cycle analysis');
+    return [];
   }
   
-  return peaks.sort((a, b) => b.magnitude - a.magnitude).slice(0, 5); // Top 5 cycles
+  try {
+    // Convert prices to complex numbers for FFT
+    const signal: ComplexNumber[] = prices.map(p => ({ re: p, im: 0 }));
+  
+    // Apply FFT
+    const spectrum = fft(signal);
+    
+    // Calculate magnitude and find dominant frequencies
+    const magnitudes = spectrum.map(c => Math.sqrt(c.re * c.re + c.im * c.im));
+    
+    // Find peaks (dominant cycles)
+    const peaks: CyclePeak[] = [];
+    const maxMagnitude = Math.max(...magnitudes.slice(1, magnitudes.length / 2));
+    
+    for (let i = 1; i < magnitudes.length / 2; i++) {
+      if (magnitudes[i] > magnitudes[i-1] && magnitudes[i] > magnitudes[i+1]) {
+        const period = prices.length / i; // Convert frequency to period
+        const magnitude = magnitudes[i];
+        const strength = magnitude / maxMagnitude; // Normalize strength
+        
+        // Only include cycles with meaningful periods (between 3 and half the data length)
+        if (period >= 3 && period <= prices.length / 2 && strength > 0.1) {
+          peaks.push({ 
+            frequency: i, 
+            period: period, 
+            magnitude: magnitude,
+            strength: strength,
+            confidence: Math.min(strength * 2, 1) // Simple confidence calculation
+          });
+        }
+      }
+    }
+    
+    return peaks.sort((a, b) => b.magnitude - a.magnitude).slice(0, 5); // Top 5 cycles
+  } catch (error) {
+    console.error('Error in cycle analysis:', error);
+    return [];
+  }
 }
 
 // Generate cycle projection points for chart overlay
