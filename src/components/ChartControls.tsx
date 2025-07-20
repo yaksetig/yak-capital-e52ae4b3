@@ -28,8 +28,6 @@ interface ChartControlsProps {
   // Cycle analysis
   showCycleAnalysis: boolean;
   onCycleAnalysisChange: (show: boolean) => void;
-  showCycleProjections: boolean;
-  onCycleProjectionsChange: (show: boolean) => void;
   
   // Zoom actions
   onZoomIn: () => void;
@@ -52,8 +50,6 @@ const ChartControls: React.FC<ChartControlsProps> = ({
   onLineVisibilityChange,
   showCycleAnalysis,
   onCycleAnalysisChange,
-  showCycleProjections,
-  onCycleProjectionsChange,
   onZoomIn,
   onZoomOut,
   onResetZoom,
@@ -193,21 +189,9 @@ const ChartControls: React.FC<ChartControlsProps> = ({
               onCheckedChange={onCycleAnalysisChange}
             />
             <label htmlFor="cycle-analysis" className="text-sm">
-              Show Cycle Analysis
+              Show Cycle Analysis (with projections)
             </label>
           </div>
-          {showCycleAnalysis && (
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="cycle-projections"
-                checked={showCycleProjections}
-                onCheckedChange={onCycleProjectionsChange}
-              />
-              <label htmlFor="cycle-projections" className="text-sm text-muted-foreground">
-                Show Projections
-              </label>
-            </div>
-          )}
         </div>
       </div>
     </Card>

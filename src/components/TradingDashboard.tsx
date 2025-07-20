@@ -41,7 +41,6 @@ const TradingDashboard = () => {
 
   // Cycle analysis state
   const [showCycleAnalysis, setShowCycleAnalysis] = useState(false);
-  const [showCycleProjections, setShowCycleProjections] = useState(false);
 
   // Fear and Greed Index
   const { data: fearGreedData, loading: fearGreedLoading, error: fearGreedError, refetch: refetchFearGreed } = useFearGreedIndex();
@@ -418,7 +417,7 @@ const TradingDashboard = () => {
     const cyclePrices = chartData.map(d => d.price);
     const cycles = showCycleAnalysis ? analyzeCycles(cyclePrices) : [];
     const cycleStrength = calculateCycleStrength(cycles);
-    const cycleProjections = showCycleProjections && cycles.length > 0 
+    const cycleProjections = showCycleAnalysis && cycles.length > 0 
       ? generateCycleProjections(chartData, cycles) 
       : [];
 
@@ -435,7 +434,7 @@ const TradingDashboard = () => {
     // Integrate cycle projections with chart data
     let extendedChartData = [...chartData];
     
-    if (showCycleProjections && cycleProjections.length > 0) {
+    if (showCycleAnalysis && cycleProjections.length > 0) {
       // Group projections by timestamp
       const projectionsByTimestamp = cycleProjections.reduce((acc, proj) => {
         if (!acc[proj.timestamp]) {
@@ -483,7 +482,7 @@ const TradingDashboard = () => {
     }
 
     return { chartData: extendedChartData, indicators, cycles, cycleStrength, cycleProjections };
-  }, [rawData, showCycleAnalysis, showCycleProjections]);
+  }, [rawData, showCycleAnalysis]);
 
   useEffect(() => {
     fetchBinanceData();
@@ -799,8 +798,6 @@ const TradingDashboard = () => {
           onLineVisibilityChange={handleLineVisibilityChange}
           showCycleAnalysis={showCycleAnalysis}
           onCycleAnalysisChange={setShowCycleAnalysis}
-          showCycleProjections={showCycleProjections}
-          onCycleProjectionsChange={setShowCycleProjections}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onResetZoom={handleResetZoom}
@@ -860,7 +857,7 @@ const TradingDashboard = () => {
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
                 
                 {/* Cycle Projection Lines with click handlers */}
-                {showCycleProjections && (
+                {showCycleAnalysis && (
                   <>
                     {chartData.some(d => (d as any).cycle0) && (
                       <Line 
