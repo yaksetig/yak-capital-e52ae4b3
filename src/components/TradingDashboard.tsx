@@ -292,7 +292,7 @@ const TradingDashboard = () => {
     const currentPrice = prices[prices.length - 1];
     
     // Ensure SMAs exist before comparison
-    const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
+    const currentAbove = ((currentSMAs as any)?.sma50 && (currentSMAs as any)?.sma200) ? (currentSMAs as any).sma50 > (currentSMAs as any).sma200 : false;
     const previousAbove = (yesterdaySMA50 && yesterdaySMA200) ? yesterdaySMA50 > yesterdaySMA200 : false;
     
     let crossSignal = "none";
@@ -311,14 +311,14 @@ const TradingDashboard = () => {
       rsiSignal = "Neutral";
     }
 
-    const priceAboveSMA20 = currentSMAs.sma20 ? currentPrice > currentSMAs.sma20 : false;
-    const priceAboveSMA50 = currentSMAs.sma50 ? currentPrice > currentSMAs.sma50 : false;
-    const priceAboveSMA200 = currentSMAs.sma200 ? currentPrice > currentSMAs.sma200 : false;
-    const priceAboveEMA20 = currentEMAs.ema20 ? currentPrice > currentEMAs.ema20 : false;
-    const priceAboveEMA50 = currentEMAs.ema50 ? currentPrice > currentEMAs.ema50 : false;
+    const priceAboveSMA20 = (currentSMAs as any)?.sma20 ? currentPrice > (currentSMAs as any).sma20 : false;
+    const priceAboveSMA50 = (currentSMAs as any)?.sma50 ? currentPrice > (currentSMAs as any).sma50 : false;
+    const priceAboveSMA200 = (currentSMAs as any)?.sma200 ? currentPrice > (currentSMAs as any).sma200 : false;
+    const priceAboveEMA20 = (currentEMAs as any)?.ema20 ? currentPrice > (currentEMAs as any).ema20 : false;
+    const priceAboveEMA50 = (currentEMAs as any)?.ema50 ? currentPrice > (currentEMAs as any).ema50 : false;
     const priceNearBBLower = currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1);
-    const sma20AboveSMA50 = (currentSMAs.sma20 && currentSMAs.sma50) ? currentSMAs.sma20 > currentSMAs.sma50 : false;
-    const sma50AboveSMA200 = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
+    const sma20AboveSMA50 = ((currentSMAs as any)?.sma20 && (currentSMAs as any)?.sma50) ? (currentSMAs as any).sma20 > (currentSMAs as any).sma50 : false;
+    const sma50AboveSMA200 = ((currentSMAs as any)?.sma50 && (currentSMAs as any)?.sma200) ? (currentSMAs as any).sma50 > (currentSMAs as any).sma200 : false;
 
     let bullishScore = 0;
     if (priceAboveSMA20) bullishScore++;
@@ -474,7 +474,7 @@ const TradingDashboard = () => {
       }, {});
       
       // Add projection data points to chart
-      const projectionDataPoints = Object.values(projectionsByTimestamp);
+      const projectionDataPoints = Object.values(projectionsByTimestamp) as any[];
       extendedChartData = [...chartData, ...projectionDataPoints];
     }
 
@@ -881,7 +881,7 @@ const TradingDashboard = () => {
                 {/* Cycle Projection Lines with click handlers */}
                 {showCycleProjections && (
                   <>
-                    {chartData.some(d => d.cycle0) && (
+                    {chartData.some(d => (d as any).cycle0) && (
                       <Line 
                         type="monotone" 
                         dataKey="cycle0" 
@@ -895,7 +895,7 @@ const TradingDashboard = () => {
                         style={{ cursor: 'pointer' }}
                       />
                     )}
-                    {chartData.some(d => d.cycle1) && (
+                    {chartData.some(d => (d as any).cycle1) && (
                       <Line 
                         type="monotone" 
                         dataKey="cycle1" 
@@ -909,7 +909,7 @@ const TradingDashboard = () => {
                         style={{ cursor: 'pointer' }}
                       />
                     )}
-                    {chartData.some(d => d.cycle2) && (
+                    {chartData.some(d => (d as any).cycle2) && (
                       <Line 
                         type="monotone" 
                         dataKey="cycle2" 

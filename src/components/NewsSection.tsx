@@ -10,7 +10,7 @@ interface NewsSectionProps {
 
 const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
   const ticker = symbol.replace('USDT', ''); // Convert BTCUSDT to BTC
-  const { data: newsData, loading, error } = useNewsData(ticker);
+  const { data: newsData, isLoading, error } = useNewsData(ticker);
 
   const getSentimentColor = (sentiment: string) => {
     if (sentiment?.toLowerCase().includes('positive')) return 'text-bullish';
@@ -45,7 +45,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
         <span className="text-sm text-muted-foreground">({ticker})</span>
       </div>
 
-      {loading && (
+      {isLoading && (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading latest news...</p>
@@ -56,7 +56,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
         <div className="text-center py-8">
           <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-4" />
           <p className="text-destructive mb-2">Failed to load news</p>
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-sm text-muted-foreground">{error?.message || 'Unknown error'}</p>
         </div>
       )}
 
