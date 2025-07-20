@@ -169,7 +169,7 @@ const TradingDashboard = () => {
     volume: true
   });
 
-  const { data: fearGreedData, isLoading: fearGreedLoading } = useFearGreedIndex();
+  const { data: fearGreedData, loading: fearGreedLoading } = useFearGreedIndex();
 
   const data = useMemo(() => generateMockData(selectedTimeRange), [selectedTimeRange]);
 
@@ -277,7 +277,7 @@ const TradingDashboard = () => {
   const rsiData = calculateRSI(data.map(d => d.close));
   const currentRSI = rsiData[rsiData.length - 1];
   const macdData = calculateMACD(data.map(d => d.close));
-  const currentMACD = macdData[macdData.length - 1];
+  const currentMACD = macdData.macd[macdData.macd.length - 1];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 space-y-6">
@@ -293,10 +293,21 @@ const TradingDashboard = () => {
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <TimeRangeSelector selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
         <ChartControls 
-          chartType={chartType}
-          onChartTypeChange={setChartType}
-          indicators={indicators}
-          onIndicatorChange={setIndicators}
+          yAxisPadding={0}
+          onYAxisPaddingChange={() => {}}
+          autoFit={true}
+          onAutoFitChange={() => {}}
+          onPriceRangeChange={() => {}}
+          chartHeight={400}
+          onChartHeightChange={() => {}}
+          visibleLines={{}}
+          onLineVisibilityChange={() => {}}
+          showCycleAnalysis={false}
+          onCycleAnalysisChange={() => {}}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+          onResetZoom={() => {}}
+          onFocusRecent={() => {}}
         />
       </div>
 
@@ -304,29 +315,27 @@ const TradingDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <InfoCard
           title="Current Price"
-          value={`$${latestData?.close.toLocaleString() || 0}`}
-          change={latestData ? ((latestData.close - latestData.open) / latestData.open * 100).toFixed(2) : '0'}
-          icon={DollarSign}
+          shortDescription={`$${latestData?.close.toLocaleString() || 0}`}
+          detailedExplanation={`Current market price with ${latestData ? ((latestData.close - latestData.open) / latestData.open * 100).toFixed(2) : '0'}% change from open`}
+          tradingTip="Monitor price action relative to key support and resistance levels"
         />
         <InfoCard
           title="24h Volume"
-          value={`${(latestData?.volume / 1000000 || 0).toFixed(1)}M`}
-          change="12.5"
-          icon={BarChart3}
+          shortDescription={`${(latestData?.volume / 1000000 || 0).toFixed(1)}M volume traded`}
+          detailedExplanation="High volume indicates strong market participation and validates price movements"
+          tradingTip="Volume spikes often precede significant price moves"
         />
         <InfoCard
           title="Price Z-Score"
-          value={currentPriceZScore.toFixed(2)}
-          change={priceZScoreSignal.signal}
-          icon={TrendingUp}
-          className={priceZScoreSignal.color}
+          shortDescription={`${currentPriceZScore.toFixed(2)} - ${priceZScoreSignal.signal}`}
+          detailedExplanation={priceZScoreSignal.description}
+          tradingTip="Extreme Z-scores (>2.5 or <-2.5) often signal potential reversals"
         />
         <InfoCard
           title="Volume Z-Score"
-          value={currentVolumeZScore.toFixed(2)}
-          change={volumeZScoreSignal.signal}
-          icon={Activity}
-          className={volumeZScoreSignal.color}
+          shortDescription={`${currentVolumeZScore.toFixed(2)} - ${volumeZScoreSignal.signal}`}
+          detailedExplanation={volumeZScoreSignal.description}
+          tradingTip="High volume Z-scores confirm price moves, low volume suggests weak signals"
         />
       </div>
 
@@ -411,7 +420,7 @@ const TradingDashboard = () => {
                     MACD
                   </CardTitle>
                   <CardDescription>
-                    Current: {currentMACD?.macd?.toFixed(2) || 'N/A'}
+                    Current: {currentMACD?.toFixed(2) || 'N/A'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -544,11 +553,15 @@ const TradingDashboard = () => {
         </TabsContent>
 
         <TabsContent value="analysis">
-          <CycleAnalysisPanel />
+          <CycleAnalysisPanel 
+            cycles={[]}
+            cycleStrength={0}
+            isVisible={true}
+          />
         </TabsContent>
 
         <TabsContent value="news">
-          <NewsSection />
+          <NewsSection symbol="BTCUSDT" />
         </TabsContent>
 
         <TabsContent value="education">
@@ -597,9 +610,9 @@ const TradingDashboard = () => {
                 <div>
                   <h4 className="font-medium">Z-Score Interpretation</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• |Z| > 2.5: Extreme deviation (strong reversal signal)</li>
-                    <li>• |Z| > 2.0: Significant deviation (moderate signal)</li>
-                    <li>• |Z| > 1.0: Minor deviation</li>
+                    <li>• |Z| {'>'}  2.5: Extreme deviation (strong reversal signal)</li>
+                    <li>• |Z| {'>'} 2.0: Significant deviation (moderate signal)</li>
+                    <li>• |Z| {'>'} 1.0: Minor deviation</li>
                     <li>• |Z| ≤ 1.0: Normal range</li>
                   </ul>
                 </div>
