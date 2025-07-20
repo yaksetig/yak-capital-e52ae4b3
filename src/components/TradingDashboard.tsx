@@ -1,0 +1,663 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+
+const TradingDashboard = () => {
+  const [rawData, setRawData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [symbol, setSymbol] = useState('BTCUSDT');
+  const [interval, setInterval] = useState('1d');
+
+  // Configuration
+  const LOOKBACK_DAYS = 201;
+  const SMA_PERIODS = [5, 20, 50, 100, 200];
+  const EMA_PERIODS = [5, 20, 50, 100, 200];
+  const RSI_PERIOD = 14;
+  const BB_PERIOD = 20;
+  const BB_MULTIPLIER = 2;
+  const MACD_FAST = 12;
+  const MACD_SLOW = 26;
+  const MACD_SIGNAL = 9;
+
+  // Technical indicator calculation functions
+  const calculateSMA = (prices, period, offset = 0) => {
+    const startIndex = prices.length - period - offset;
+    const endIndex = prices.length - offset;
+    
+    if (startIndex < 0) return null;
+    
+    const recentPrices = prices.slice(startIndex, endIndex);
+    const sum = recentPrices.reduce((total, price) => total + price, 0);
+    return sum / period;
+  };
+
+  const calculateEMA = (prices, period) => {
+    if (prices.length < period) return null;
+    
+    const multiplier = 2 / (period + 1);
+    let ema = prices[0];
+    
+    for (let i = 1; i < prices.length; i++) {
+      ema = (prices[i] * multiplier) + (ema * (1 - multiplier));
+    }
+    
+    return ema;
+  };
+
+  const calculateEMAArray = (prices, period) => {
+    if (prices.length < period) return null;
+    
+    const multiplier = 2 / (period + 1);
+    const emaArray = [];
+    let ema = prices[0];
+    emaArray.push(ema);
+    
+    for (let i = 1; i < prices.length; i++) {
+      ema = (prices[i] * multiplier) + (ema * (1 - multiplier));
+      emaArray.push(ema);
+    }
+    
+    return emaArray;
+  };
+
+  const calculateRSI = (prices, period) => {
+    if (prices.length < period + 1) return null;
+    
+    let gains = [];
+    let losses = [];
+    
+    for (let i = 1; i < prices.length; i++) {
+      const change = prices[i] - prices[i - 1];
+      gains.push(change > 0 ? change : 0);
+      losses.push(change < 0 ? Math.abs(change) : 0);
+    }
+    
+    let avgGain = gains.slice(0, period).reduce((sum, gain) => sum + gain, 0) / period;
+    let avgLoss = losses.slice(0, period).reduce((sum, loss) => sum + loss, 0) / period;
+    
+    for (let i = period; i < gains.length; i++) {
+      avgGain = ((avgGain * (period - 1)) + gains[i]) / period;
+      avgLoss = ((avgLoss * (period - 1)) + losses[i]) / period;
+    }
+    
+    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    return 100 - (100 / (1 + rs));
+  };
+
+  const calculateStandardDeviation = (prices, period) => {
+    if (prices.length < period) return null;
+    
+    const recentPrices = prices.slice(-period);
+    const mean = recentPrices.reduce((sum, price) => sum + price, 0) / period;
+    
+    const variance = recentPrices.reduce((sum, price) => {
+      const diff = price - mean;
+      return sum + (diff * diff);
+    }, 0) / period;
+    
+    return Math.sqrt(variance);
+  };
+
+  const calculateMACD = (prices, fastPeriod, slowPeriod, signalPeriod) => {
+    if (prices.length < slowPeriod) return null;
+    
+    const ema12Array = calculateEMAArray(prices, fastPeriod);
+    const ema26Array = calculateEMAArray(prices, slowPeriod);
+    
+    if (!ema12Array || !ema26Array) return null;
+    
+    const macdArray = [];
+    for (let i = slowPeriod - 1; i < ema12Array.length; i++) {
+      macdArray.push(ema12Array[i] - ema26Array[i]);
+    }
+    
+    const signalArray = calculateEMAArray(macdArray, signalPeriod);
+    
+    if (!signalArray || signalArray.length === 0) return null;
+    
+    const currentMACD = macdArray[macdArray.length - 1];
+    const currentSignal = signalArray[signalArray.length - 1];
+    const currentHistogram = currentMACD - currentSignal;
+    
+    const previousMACD = macdArray.length > 1 ? macdArray[macdArray.length - 2] : null;
+    const previousSignal = signalArray.length > 1 ? signalArray[signalArray.length - 2] : null;
+    
+    let macdSignal = "none";
+    if (previousMACD && previousSignal) {
+      const currentAbove = currentMACD > currentSignal;
+      const previousAbove = previousMACD > previousSignal;
+      
+      if (!previousAbove && currentAbove) {
+        macdSignal = "bullish_crossover";
+      } else if (previousAbove && !currentAbove) {
+        macdSignal = "bearish_crossover";
+      }
+    }
+    
+    return {
+      macd: currentMACD,
+      signal: currentSignal,
+      histogram: currentHistogram,
+      crossover: macdSignal,
+      macdArray,
+      signalArray
+    };
+  };
+
+  // Fetch data from Binance API
+  const fetchBinanceData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(
+        `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${LOOKBACK_DAYS}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setRawData(data);
+    } catch (err) {
+      setError(`Failed to fetch data: ${err.message}`);
+      console.error('Error fetching Binance data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Process raw data and calculate indicators
+  const processedData = useMemo(() => {
+    if (!rawData || rawData.length === 0) return { chartData: [], indicators: null };
+
+    // Extract prices from Binance kline data
+    const prices = rawData.map(candle => parseFloat(candle[4])); // Close price
+    
+    if (prices.length < LOOKBACK_DAYS) {
+      return { chartData: [], indicators: null };
+    }
+
+    // Calculate all indicators for the current data
+    const currentSMAs = {};
+    SMA_PERIODS.forEach(period => {
+      currentSMAs[`sma${period}`] = calculateSMA(prices, period, 0);
+    });
+
+    const currentEMAs = {};
+    EMA_PERIODS.forEach(period => {
+      currentEMAs[`ema${period}`] = calculateEMA(prices, period);
+    });
+
+    const yesterdaySMA50 = calculateSMA(prices, 50, 1);
+    const yesterdaySMA200 = calculateSMA(prices, 200, 1);
+    const currentRSI = calculateRSI(prices, RSI_PERIOD);
+    
+    const bbMiddle = calculateSMA(prices, BB_PERIOD);
+    const bbStdDev = calculateStandardDeviation(prices, BB_PERIOD);
+    const bbUpper = bbMiddle + (BB_MULTIPLIER * bbStdDev);
+    const bbLower = bbMiddle - (BB_MULTIPLIER * bbStdDev);
+    
+    const macdResult = calculateMACD(prices, MACD_FAST, MACD_SLOW, MACD_SIGNAL);
+    
+    const currentPrice = prices[prices.length - 1];
+    
+    // Calculate golden/death cross
+    const currentAbove = (currentSMAs as any).sma50 > (currentSMAs as any).sma200;
+    const previousAbove = yesterdaySMA50 > yesterdaySMA200;
+    
+    let crossSignal = "none";
+    if (!previousAbove && currentAbove) {
+      crossSignal = "golden_cross";
+    } else if (previousAbove && !currentAbove) {
+      crossSignal = "death_cross";
+    }
+
+    // RSI signal
+    let rsiSignal;
+    if (currentRSI < 30) {
+      rsiSignal = "Oversold";
+    } else if (currentRSI > 70) {
+      rsiSignal = "Overbought";
+    } else {
+      rsiSignal = "Neutral";
+    }
+
+    // Calculate bullish score
+    const priceAboveSMA20 = currentPrice > (currentSMAs as any).sma20;
+    const priceAboveSMA50 = currentPrice > (currentSMAs as any).sma50;
+    const priceAboveSMA200 = currentPrice > (currentSMAs as any).sma200;
+    const priceAboveEMA20 = currentPrice > (currentEMAs as any).ema20;
+    const priceAboveEMA50 = currentPrice > (currentEMAs as any).ema50;
+    const priceNearBBLower = currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1);
+    const sma20AboveSMA50 = (currentSMAs as any).sma20 > (currentSMAs as any).sma50;
+    const sma50AboveSMA200 = (currentSMAs as any).sma50 > (currentSMAs as any).sma200;
+
+    let bullishScore = 0;
+    if (priceAboveSMA20) bullishScore++;
+    if (priceAboveSMA50) bullishScore++;
+    if (priceAboveSMA200) bullishScore++;
+    if (priceAboveEMA20) bullishScore++;
+    if (priceAboveEMA50) bullishScore++;
+    if (sma20AboveSMA50) bullishScore++;
+    if (sma50AboveSMA200) bullishScore++;
+    if (crossSignal === "golden_cross") bullishScore++;
+    if (rsiSignal === "Oversold") bullishScore++;
+    if (priceNearBBLower) bullishScore++;
+    if (macdResult && macdResult.crossover === "bullish_crossover") bullishScore++;
+
+    let marketSentiment;
+    if (bullishScore >= 8) marketSentiment = "bullish";
+    else if (bullishScore <= 3) marketSentiment = "bearish";
+    else marketSentiment = "neutral";
+
+    // Prepare chart data (last 60 days for better visualization)
+    const chartData = rawData.slice(-60).map((candle, index) => {
+      const timestamp = parseInt(candle[0]);
+      const price = parseFloat(candle[4]);
+      const volume = parseFloat(candle[5]);
+      const date = new Date(timestamp);
+      
+      // Calculate indicators for this point in time
+      const sliceIndex = rawData.length - 60 + index + 1;
+      const pricesUpToThis = prices.slice(0, sliceIndex);
+      
+      const sma20 = calculateSMA(pricesUpToThis, 20);
+      const sma50 = calculateSMA(pricesUpToThis, 50);
+      const ema20 = calculateEMA(pricesUpToThis, 20);
+      const ema50 = calculateEMA(pricesUpToThis, 50);
+      const rsi = calculateRSI(pricesUpToThis, RSI_PERIOD);
+      
+      const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
+      const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
+      const bbUp = bbMid ? bbMid + (BB_MULTIPLIER * bbStd) : null;
+      const bbLow = bbMid ? bbMid - (BB_MULTIPLIER * bbStd) : null;
+      
+      let macd = null, macdSig = null, macdHist = null;
+      if (pricesUpToThis.length >= MACD_SLOW) {
+        const macdRes = calculateMACD(pricesUpToThis, MACD_FAST, MACD_SLOW, MACD_SIGNAL);
+        if (macdRes) {
+          macd = macdRes.macd;
+          macdSig = macdRes.signal;
+          macdHist = macdRes.histogram;
+        }
+      }
+
+      return {
+        date: date.toISOString().split('T')[0],
+        timestamp: timestamp,
+        price: price,
+        volume: volume,
+        sma20: sma20,
+        sma50: sma50,
+        ema20: ema20,
+        ema50: ema50,
+        bbUpper: bbUp,
+        bbMiddle: bbMid,
+        bbLower: bbLow,
+        rsi: rsi,
+        macd: macd,
+        macdSignal: macdSig,
+        macdHistogram: macdHist
+      };
+    });
+
+    const indicators = {
+      ...currentSMAs,
+      ...currentEMAs,
+      currentPrice,
+      bbUpper,
+      bbMiddle,
+      bbLower,
+      rsi: currentRSI,
+      rsiSignal,
+      macd: macdResult?.macd || null,
+      macdSignal: macdResult?.signal || null,
+      macdHistogram: macdResult?.histogram || null,
+      macdCrossover: macdResult?.crossover || null,
+      bullishScore,
+      marketSentiment,
+      crossSignal,
+      priceAboveSMA20,
+      priceAboveSMA50,
+      priceAboveSMA200,
+      priceAboveEMA20,
+      priceAboveEMA50
+    };
+
+    return { chartData, indicators };
+  }, [rawData]);
+
+  // Fetch data on component mount and when symbol/interval changes
+  useEffect(() => {
+    fetchBinanceData();
+  }, [symbol, interval]);
+
+  const formatPrice = (value) => {
+    if (value === null || value === undefined) return 'N/A';
+    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatDate = (value) => {
+    return new Date(value).toLocaleDateString();
+  };
+
+  const getSentimentColor = (sentiment) => {
+    switch(sentiment) {
+      case 'bullish': return 'text-bullish';
+      case 'bearish': return 'text-bearish';
+      default: return 'text-neutral';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="p-8 text-center shadow-card">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-foreground">Loading market data...</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="p-8 text-center shadow-card">
+          <p className="text-destructive text-lg mb-4">{error}</p>
+          <Button onClick={fetchBinanceData} className="bg-gradient-primary">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  const { chartData, indicators } = processedData;
+
+  if (!indicators) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="p-8 text-center shadow-card">
+          <p className="text-lg text-foreground mb-4">Not enough data for technical analysis</p>
+          <Button onClick={fetchBinanceData} className="bg-gradient-primary">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Data
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+              {symbol} Technical Analysis
+            </h1>
+            <p className="text-muted-foreground">Advanced trading dashboard with live market data</p>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <select 
+              value={symbol} 
+              onChange={(e) => setSymbol(e.target.value)}
+              className="px-4 py-2 bg-card border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="BTCUSDT">BTC/USDT</option>
+              <option value="ETHUSDT">ETH/USDT</option>
+              <option value="ADAUSDT">ADA/USDT</option>
+              <option value="SOLUSDT">SOL/USDT</option>
+            </select>
+            
+            <select 
+              value={interval} 
+              onChange={(e) => setInterval(e.target.value)}
+              className="px-4 py-2 bg-card border border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="1h">1 Hour</option>
+              <option value="4h">4 Hours</option>
+              <option value="1d">1 Day</option>
+              <option value="1w">1 Week</option>
+            </select>
+            
+            <Button 
+              onClick={fetchBinanceData}
+              disabled={loading}
+              className="bg-gradient-primary shadow-trading"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-muted-foreground">Current Price</h3>
+            </div>
+            <p className="text-2xl font-bold text-primary">{formatPrice(indicators.currentPrice)}</p>
+          </Card>
+          
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-neutral" />
+              <h3 className="text-sm font-semibold text-muted-foreground">RSI (14)</h3>
+            </div>
+            <p className={`text-2xl font-bold ${indicators.rsi > 70 ? 'text-bearish' : indicators.rsi < 30 ? 'text-bullish' : 'text-neutral'}`}>
+              {indicators.rsi ? indicators.rsi.toFixed(1) : 'N/A'}
+            </p>
+          </Card>
+          
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-muted-foreground">MACD</h3>
+            </div>
+            <p className={`text-xl font-bold ${indicators.macd > indicators.macdSignal ? 'text-bullish' : 'text-bearish'}`}>
+              {indicators.macd ? indicators.macd.toFixed(2) : 'N/A'}
+            </p>
+          </Card>
+          
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-muted-foreground">Bullish Score</h3>
+            </div>
+            <p className="text-2xl font-bold text-primary">{indicators.bullishScore}/11</p>
+          </Card>
+          
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              {indicators.marketSentiment === 'bullish' ? (
+                <TrendingUp className="w-4 h-4 text-bullish" />
+              ) : indicators.marketSentiment === 'bearish' ? (
+                <TrendingDown className="w-4 h-4 text-bearish" />
+              ) : (
+                <Activity className="w-4 h-4 text-neutral" />
+              )}
+              <h3 className="text-sm font-semibold text-muted-foreground">Sentiment</h3>
+            </div>
+            <p className={`text-xl font-bold capitalize ${getSentimentColor(indicators.marketSentiment)}`}>
+              {indicators.marketSentiment}
+            </p>
+          </Card>
+          
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-muted-foreground">SMA 50/200</h3>
+            </div>
+            <p className={`text-lg font-bold ${(indicators as any).sma50 > (indicators as any).sma200 ? 'text-bullish' : 'text-bearish'}`}>
+              {(indicators as any).sma50 > (indicators as any).sma200 ? 'Golden' : 'Death'} Cross
+            </p>
+          </Card>
+        </div>
+
+        {/* Main Price Chart */}
+        <Card className="p-6 mb-8 shadow-card border-border">
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Price Chart with Technical Indicators</h2>
+          <div className="h-96 bg-chart-bg rounded-lg p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={formatDate}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  tickFormatter={formatPrice}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <Tooltip 
+                  formatter={(value, name) => [formatPrice(value), name]}
+                  labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                />
+                <Legend />
+                
+                {/* Bollinger Bands */}
+                <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} />
+                <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} />
+                <Line type="monotone" dataKey="bbMiddle" stroke="hsl(var(--muted-foreground))" strokeWidth={1} name="BB Middle" dot={false} />
+                
+                {/* Moving Averages */}
+                <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} />
+                <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} />
+                <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />
+                <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />
+                
+                {/* Price */}
+                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Indicator Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* RSI Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">RSI (14)</h2>
+            <div className="h-64 bg-chart-bg rounded-lg p-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'RSI']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={70} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
+                  <ReferenceLine y={30} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
+                  <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
+                  <Line type="monotone" dataKey="rsi" stroke="hsl(var(--accent))" strokeWidth={2} name="RSI" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* MACD Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">MACD (12,26,9)</h2>
+            <div className="h-64 bg-chart-bg rounded-lg p-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value, name) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', name]}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
+                  <Line type="monotone" dataKey="macd" stroke="hsl(var(--primary))" strokeWidth={2} name="MACD" dot={false} />
+                  <Line type="monotone" dataKey="macdSignal" stroke="hsl(var(--bearish))" strokeWidth={2} name="Signal" dot={false} />
+                  <Bar dataKey="macdHistogram" fill="hsl(var(--bullish))" name="Histogram" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+
+        {/* Moving Averages Table */}
+        <Card className="p-6 shadow-card border-border">
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Moving Averages Summary</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Period</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">SMA</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">EMA</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Price vs SMA</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Price vs EMA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[5, 20, 50, 100, 200].map(period => (
+                  <tr key={period} className="border-b border-border hover:bg-muted/50">
+                    <td className="p-3 font-medium">{period}</td>
+                    <td className="p-3">{formatPrice(indicators[`sma${period}`])}</td>
+                    <td className="p-3">{formatPrice(indicators[`ema${period}`])}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-sm font-medium ${
+                        indicators.currentPrice > indicators[`sma${period}`] 
+                          ? 'bg-bullish/20 text-bullish' 
+                          : 'bg-bearish/20 text-bearish'
+                      }`}>
+                        {indicators.currentPrice > indicators[`sma${period}`] ? 'Above' : 'Below'}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-sm font-medium ${
+                        indicators.currentPrice > indicators[`ema${period}`] 
+                          ? 'bg-bullish/20 text-bullish' 
+                          : 'bg-bearish/20 text-bearish'
+                      }`}>
+                        {indicators.currentPrice > indicators[`ema${period}`] ? 'Above' : 'Below'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default TradingDashboard;

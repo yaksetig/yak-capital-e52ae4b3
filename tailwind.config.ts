@@ -61,7 +61,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Trading specific colors
+				bullish: 'hsl(var(--bullish))',
+				bearish: 'hsl(var(--bearish))',
+				neutral: 'hsl(var(--neutral))',
+				'chart-grid': 'hsl(var(--chart-grid))',
+				'chart-bg': 'hsl(var(--chart-bg))'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-success': 'var(--gradient-success)',
+				'gradient-danger': 'var(--gradient-danger)'
+			},
+			boxShadow: {
+				'trading': 'var(--shadow-trading)',
+				'card': 'var(--shadow-card)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
