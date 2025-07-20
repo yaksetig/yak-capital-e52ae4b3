@@ -959,8 +959,8 @@ const TradingDashboard = () => {
                 {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />}
                 {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />}
                 
-                {/* VWAP Line */}
-                {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3" name="VWAP" dot={false} />}
+                {/* VWAP Line with bright, visible color */}
+                {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} />}
                 
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
                 
