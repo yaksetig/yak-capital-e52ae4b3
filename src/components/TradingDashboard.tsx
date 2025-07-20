@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -416,7 +415,48 @@ const TradingDashboard = () => {
       ? generateCycleProjections(chartData, cycles) 
       : [];
 
-    return { chartData, indicators, cycles, cycleStrength, cycleProjections };
+    // Debug cycle analysis
+    if (showCycleAnalysis && cycles.length > 0) {
+      console.log('Cycle Analysis Results:', {
+        cycleCount: cycles.length,
+        cycleStrength,
+        topCycles: cycles.slice(0, 3),
+        projectionCount: cycleProjections.length
+      });
+    }
+
+    // Integrate cycle projections with chart data
+    let extendedChartData = [...chartData];
+    
+    if (showCycleProjections && cycleProjections.length > 0) {
+      // Group projections by timestamp
+      const projectionsByTimestamp = cycleProjections.reduce((acc, proj) => {
+        if (!acc[proj.timestamp]) {
+          acc[proj.timestamp] = {
+            date: new Date(proj.timestamp).toISOString().split('T')[0],
+            timestamp: proj.timestamp,
+            price: null, // Future data point
+            isProjection: true,
+            cycle0: null,
+            cycle1: null,
+            cycle2: null
+          };
+        }
+        
+        // Add cycle projection values
+        if (proj.cycleId === 'cycle-0') acc[proj.timestamp].cycle0 = chartData[chartData.length - 1].price + proj.value;
+        if (proj.cycleId === 'cycle-1') acc[proj.timestamp].cycle1 = chartData[chartData.length - 1].price + proj.value;
+        if (proj.cycleId === 'cycle-2') acc[proj.timestamp].cycle2 = chartData[chartData.length - 1].price + proj.value;
+        
+        return acc;
+      }, {});
+      
+      // Add projection data points to chart
+      const projectionDataPoints = Object.values(projectionsByTimestamp);
+      extendedChartData = [...chartData, ...projectionDataPoints];
+    }
+
+    return { chartData: extendedChartData, indicators, cycles, cycleStrength, cycleProjections };
   }, [rawData, showCycleAnalysis, showCycleProjections]);
 
   // Fetch data on component mount and when symbol/interval changes
@@ -765,6 +805,42 @@ const TradingDashboard = () => {
                 {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />}
                 
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
+                
+                {/* Cycle Projection Lines */}
+                {showCycleProjections && (
+                  <>
+                    <Line 
+                      type="monotone" 
+                      dataKey="cycle0" 
+                      stroke="rgba(255, 165, 0, 0.7)" 
+                      strokeWidth={2} 
+                      strokeDasharray="8 8" 
+                      name="Cycle 1 Projection" 
+                      dot={false}
+                      connectNulls={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="cycle1" 
+                      stroke="rgba(75, 192, 192, 0.7)" 
+                      strokeWidth={2} 
+                      strokeDasharray="8 8" 
+                      name="Cycle 2 Projection" 
+                      dot={false}
+                      connectNulls={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="cycle2" 
+                      stroke="rgba(153, 102, 255, 0.7)" 
+                      strokeWidth={2} 
+                      strokeDasharray="8 8" 
+                      name="Cycle 3 Projection" 
+                      dot={false}
+                      connectNulls={false}
+                    />
+                  </>
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
