@@ -436,6 +436,18 @@ const TradingDashboard = () => {
             date: new Date(proj.timestamp).toISOString().split('T')[0],
             timestamp: proj.timestamp,
             price: null, // Future data point
+            volume: 0,
+            sma20: 0,
+            sma50: 0,
+            ema20: 0,
+            ema50: 0,
+            bbUpper: 0,
+            bbMiddle: 0,
+            bbLower: 0,
+            rsi: 0,
+            macd: 0,
+            macdSignal: 0,
+            macdHistogram: 0,
             isProjection: true,
             cycle0: null,
             cycle1: null,
@@ -452,7 +464,7 @@ const TradingDashboard = () => {
       }, {});
       
       // Add projection data points to chart
-      const projectionDataPoints = Object.values(projectionsByTimestamp);
+      const projectionDataPoints = Object.values(projectionsByTimestamp) as any[];
       extendedChartData = [...chartData, ...projectionDataPoints];
     }
 
