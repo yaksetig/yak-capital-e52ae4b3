@@ -8,6 +8,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import InfoCard from './InfoCard';
 import TimeRangeSelector from './TimeRangeSelector';
 import ChartControls from './ChartControls';
+import CycleAnalysisPanel from './CycleAnalysisPanel';
+import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -32,6 +34,10 @@ const TradingDashboard = () => {
     bbMiddle: true,
     bbLower: true,
   });
+
+  // Cycle analysis state
+  const [showCycleAnalysis, setShowCycleAnalysis] = useState(false);
+  const [showCycleProjections, setShowCycleProjections] = useState(false);
 
   // Configuration
   const LOOKBACK_DAYS = 201;
@@ -253,7 +259,7 @@ const TradingDashboard = () => {
 
   // Process raw data and calculate indicators
   const processedData = useMemo(() => {
-    if (!rawData || rawData.length === 0) return { chartData: [], indicators: null };
+    if (!rawData || rawData.length === 0) return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
 
     const prices = rawData.map(candle => parseFloat(candle[4]));
     
@@ -402,8 +408,16 @@ const TradingDashboard = () => {
       priceAboveEMA50
     };
 
-    return { chartData, indicators };
-  }, [rawData]);
+    // Cycle analysis
+    const cyclePrices = chartData.map(d => d.price);
+    const cycles = showCycleAnalysis ? analyzeCycles(cyclePrices) : [];
+    const cycleStrength = calculateCycleStrength(cycles);
+    const cycleProjections = showCycleProjections && cycles.length > 0 
+      ? generateCycleProjections(chartData, cycles) 
+      : [];
+
+    return { chartData, indicators, cycles, cycleStrength, cycleProjections };
+  }, [rawData, showCycleAnalysis, showCycleProjections]);
 
   // Fetch data on component mount and when symbol/interval changes
   useEffect(() => {
@@ -513,7 +527,7 @@ const TradingDashboard = () => {
     );
   }
 
-  const { chartData, indicators } = processedData;
+  const { chartData, indicators, cycles, cycleStrength, cycleProjections } = processedData;
 
   if (!indicators) {
     return (
@@ -690,10 +704,20 @@ const TradingDashboard = () => {
           onChartHeightChange={setChartHeight}
           visibleLines={visibleLines}
           onLineVisibilityChange={handleLineVisibilityChange}
+          showCycleAnalysis={showCycleAnalysis}
+          onCycleAnalysisChange={setShowCycleAnalysis}
+          showCycleProjections={showCycleProjections}
+          onCycleProjectionsChange={setShowCycleProjections}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onResetZoom={handleResetZoom}
           onFocusRecent={handleFocusRecent}
+        />
+
+        <CycleAnalysisPanel
+          cycles={cycles}
+          cycleStrength={cycleStrength}
+          isVisible={showCycleAnalysis}
         />
 
         {/* Main Price Chart */}

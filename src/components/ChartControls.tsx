@@ -25,6 +25,12 @@ interface ChartControlsProps {
   visibleLines: Record<string, boolean>;
   onLineVisibilityChange: (line: string, visible: boolean) => void;
   
+  // Cycle analysis
+  showCycleAnalysis: boolean;
+  onCycleAnalysisChange: (show: boolean) => void;
+  showCycleProjections: boolean;
+  onCycleProjectionsChange: (show: boolean) => void;
+  
   // Zoom actions
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -44,6 +50,10 @@ const ChartControls: React.FC<ChartControlsProps> = ({
   onChartHeightChange,
   visibleLines,
   onLineVisibilityChange,
+  showCycleAnalysis,
+  onCycleAnalysisChange,
+  showCycleProjections,
+  onCycleProjectionsChange,
   onZoomIn,
   onZoomOut,
   onResetZoom,
@@ -167,6 +177,37 @@ const ChartControls: React.FC<ChartControlsProps> = ({
               </label>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Cycle Analysis Controls */}
+      <div className="space-y-2 border-t pt-4">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Advanced Cycle Analysis:</label>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="cycle-analysis"
+              checked={showCycleAnalysis}
+              onCheckedChange={onCycleAnalysisChange}
+            />
+            <label htmlFor="cycle-analysis" className="text-sm">
+              Show Cycle Analysis
+            </label>
+          </div>
+          {showCycleAnalysis && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="cycle-projections"
+                checked={showCycleProjections}
+                onCheckedChange={onCycleProjectionsChange}
+              />
+              <label htmlFor="cycle-projections" className="text-sm text-muted-foreground">
+                Show Projections
+              </label>
+            </div>
+          )}
         </div>
       </div>
     </Card>
