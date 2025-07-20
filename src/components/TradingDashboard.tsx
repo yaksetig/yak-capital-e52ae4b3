@@ -30,6 +30,7 @@ const TradingDashboard = () => {
   const [manualPriceRange, setManualPriceRange] = useState({ min: 0, max: 0 });
   const [chartHeight, setChartHeight] = useState(400);
   const [visibleLines, setVisibleLines] = useState({
+    price: true,
     sma20: true,
     sma50: true,
     ema20: true,
@@ -962,7 +963,7 @@ const TradingDashboard = () => {
                 {/* VWAP Line with bright, visible color */}
                 {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} />}
                 
-                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
+                {visibleLines.price && <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />}
                 
                 {/* Cycle Projection Lines with click handlers */}
                 {showCycleAnalysis && (
