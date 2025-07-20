@@ -498,7 +498,9 @@ const TradingDashboard = () => {
   const filteredChartData = getFilteredChartData(chartData);
   const yAxisDomain = autoFit 
     ? calculateYAxisDomain(filteredChartData, yAxisPadding)
-    : [manualPriceRange.min || 'auto', manualPriceRange.max || 'auto'];
+    : (manualPriceRange.min !== null && manualPriceRange.max !== null
+        ? [manualPriceRange.min, manualPriceRange.max]
+        : ['auto', 'auto']);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
