@@ -825,39 +825,45 @@ const TradingDashboard = () => {
                 
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
                 
-                {/* Cycle Projection Lines */}
+                {/* Cycle Projection Lines - only show if they have data */}
                 {showCycleProjections && (
                   <>
-                    <Line 
-                      type="monotone" 
-                      dataKey="cycle0" 
-                      stroke="rgba(255, 165, 0, 0.7)" 
-                      strokeWidth={2} 
-                      strokeDasharray="8 8" 
-                      name="Cycle 1 Projection" 
-                      dot={false}
-                      connectNulls={false}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cycle1" 
-                      stroke="rgba(75, 192, 192, 0.7)" 
-                      strokeWidth={2} 
-                      strokeDasharray="8 8" 
-                      name="Cycle 2 Projection" 
-                      dot={false}
-                      connectNulls={false}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cycle2" 
-                      stroke="rgba(153, 102, 255, 0.7)" 
-                      strokeWidth={2} 
-                      strokeDasharray="8 8" 
-                      name="Cycle 3 Projection" 
-                      dot={false}
-                      connectNulls={false}
-                    />
+                    {chartData.some(d => d.cycle0) && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="cycle0" 
+                        stroke="rgba(255, 165, 0, 0.7)" 
+                        strokeWidth={2} 
+                        strokeDasharray="8 8" 
+                        name="Cycle 1 Projection" 
+                        dot={false}
+                        connectNulls={false}
+                      />
+                    )}
+                    {chartData.some(d => d.cycle1) && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="cycle1" 
+                        stroke="rgba(75, 192, 192, 0.7)" 
+                        strokeWidth={2} 
+                        strokeDasharray="8 8" 
+                        name="Cycle 2 Projection" 
+                        dot={false}
+                        connectNulls={false}
+                      />
+                    )}
+                    {chartData.some(d => d.cycle2) && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="cycle2" 
+                        stroke="rgba(153, 102, 255, 0.7)" 
+                        strokeWidth={2} 
+                        strokeDasharray="8 8" 
+                        name="Cycle 3 Projection" 
+                        dot={false}
+                        connectNulls={false}
+                      />
+                    )}
                   </>
                 )}
               </LineChart>
