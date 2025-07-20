@@ -2,7 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import InfoCard from './InfoCard';
+import TimeRangeSelector from './TimeRangeSelector';
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -10,6 +13,8 @@ const TradingDashboard = () => {
   const [error, setError] = useState(null);
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [interval, setInterval] = useState('1d');
+  const [timeRange, setTimeRange] = useState('60');
+  const [showEducation, setShowEducation] = useState(false);
 
   // Configuration
   const LOOKBACK_DAYS = 201;
@@ -171,18 +176,24 @@ const TradingDashboard = () => {
     }
   };
 
+  // Filter chart data based on selected time range
+  const getFilteredChartData = (chartData) => {
+    if (timeRange === 'all') return chartData;
+    
+    const daysToShow = parseInt(timeRange);
+    return chartData.slice(-daysToShow);
+  };
+
   // Process raw data and calculate indicators
   const processedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return { chartData: [], indicators: null };
 
-    // Extract prices from Binance kline data
-    const prices = rawData.map(candle => parseFloat(candle[4])); // Close price
+    const prices = rawData.map(candle => parseFloat(candle[4]));
     
     if (prices.length < LOOKBACK_DAYS) {
       return { chartData: [], indicators: null };
     }
 
-    // Calculate all indicators for the current data
     const currentSMAs = {};
     SMA_PERIODS.forEach(period => {
       currentSMAs[`sma${period}`] = calculateSMA(prices, period, 0);
@@ -206,7 +217,6 @@ const TradingDashboard = () => {
     
     const currentPrice = prices[prices.length - 1];
     
-    // Calculate golden/death cross
     const currentAbove = (currentSMAs as any).sma50 > (currentSMAs as any).sma200;
     const previousAbove = yesterdaySMA50 > yesterdaySMA200;
     
@@ -217,7 +227,6 @@ const TradingDashboard = () => {
       crossSignal = "death_cross";
     }
 
-    // RSI signal
     let rsiSignal;
     if (currentRSI < 30) {
       rsiSignal = "Oversold";
@@ -227,7 +236,6 @@ const TradingDashboard = () => {
       rsiSignal = "Neutral";
     }
 
-    // Calculate bullish score
     const priceAboveSMA20 = currentPrice > (currentSMAs as any).sma20;
     const priceAboveSMA50 = currentPrice > (currentSMAs as any).sma50;
     const priceAboveSMA200 = currentPrice > (currentSMAs as any).sma200;
@@ -255,14 +263,12 @@ const TradingDashboard = () => {
     else if (bullishScore <= 3) marketSentiment = "bearish";
     else marketSentiment = "neutral";
 
-    // Prepare chart data (last 60 days for better visualization)
     const chartData = rawData.slice(-60).map((candle, index) => {
       const timestamp = parseInt(candle[0]);
       const price = parseFloat(candle[4]);
       const volume = parseFloat(candle[5]);
       const date = new Date(timestamp);
       
-      // Calculate indicators for this point in time
       const sliceIndex = rawData.length - 60 + index + 1;
       const pricesUpToThis = prices.slice(0, sliceIndex);
       
@@ -354,6 +360,34 @@ const TradingDashboard = () => {
     }
   };
 
+  // Educational content data
+  const educationalContent = [
+    {
+      title: "Moving Averages (SMA/EMA)",
+      shortDescription: "Trend direction and momentum indicators",
+      detailedExplanation: "Simple Moving Average (SMA) calculates the average price over a specific period, while Exponential Moving Average (EMA) gives more weight to recent prices. They help identify trend direction and potential support/resistance levels.",
+      tradingTip: "When price is above the moving average, it suggests an uptrend. Golden Cross (SMA 50 > SMA 200) is a bullish signal, while Death Cross is bearish."
+    },
+    {
+      title: "RSI (Relative Strength Index)",
+      shortDescription: "Momentum oscillator measuring overbought/oversold conditions",
+      detailedExplanation: "RSI ranges from 0-100. Values above 70 typically indicate overbought conditions (potential sell signal), while values below 30 suggest oversold conditions (potential buy signal). RSI also shows momentum and can indicate trend strength.",
+      tradingTip: "Look for RSI divergences with price action. If price makes new highs but RSI doesn't, it may signal weakening momentum."
+    },
+    {
+      title: "MACD (Moving Average Convergence Divergence)",
+      shortDescription: "Trend-following momentum indicator",
+      detailedExplanation: "MACD consists of three components: MACD line (12 EMA - 26 EMA), Signal line (9 EMA of MACD), and Histogram (MACD - Signal). It helps identify trend changes and momentum shifts.",
+      tradingTip: "Buy signals occur when MACD crosses above the signal line, and sell signals when it crosses below. The histogram shows the strength of the signal."
+    },
+    {
+      title: "Bollinger Bands",
+      shortDescription: "Volatility bands showing price channels",
+      detailedExplanation: "Bollinger Bands consist of a middle line (20 SMA) and two outer bands (±2 standard deviations). They expand and contract based on market volatility, helping identify overbought/oversold conditions and potential breakouts.",
+      tradingTip: "Prices tend to bounce between the bands. When bands squeeze together, it often precedes a significant price move."
+    }
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -395,6 +429,8 @@ const TradingDashboard = () => {
     );
   }
 
+  const filteredChartData = getFilteredChartData(chartData);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-7xl mx-auto p-6">
@@ -402,9 +438,10 @@ const TradingDashboard = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-              {symbol} Technical Analysis
+              Yak Capital
             </h1>
             <p className="text-muted-foreground">Advanced trading dashboard with live market data</p>
+            <p className="text-sm text-muted-foreground mt-1">Currently analyzing: {symbol}</p>
           </div>
           
           <div className="flex flex-wrap gap-3">
@@ -431,6 +468,15 @@ const TradingDashboard = () => {
             </select>
             
             <Button 
+              onClick={() => setShowEducation(!showEducation)}
+              variant="outline"
+              className="gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              Learn
+            </Button>
+            
+            <Button 
               onClick={fetchBinanceData}
               disabled={loading}
               className="bg-gradient-primary shadow-trading"
@@ -440,6 +486,26 @@ const TradingDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Educational Section */}
+        <Collapsible open={showEducation} onOpenChange={setShowEducation}>
+          <CollapsibleContent>
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Understanding Technical Indicators</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {educationalContent.map((content, index) => (
+                  <InfoCard
+                    key={index}
+                    title={content.title}
+                    shortDescription={content.shortDescription}
+                    detailedExplanation={content.detailedExplanation}
+                    tradingTip={content.tradingTip}
+                  />
+                ))}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
         
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -508,10 +574,16 @@ const TradingDashboard = () => {
 
         {/* Main Price Chart */}
         <Card className="p-6 mb-8 shadow-card border-border">
-          <h2 className="text-xl font-semibold mb-4 text-foreground">Price Chart with Technical Indicators</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 className="text-xl font-semibold text-foreground">Price Chart with Technical Indicators</h2>
+            <TimeRangeSelector 
+              selectedRange={timeRange}
+              onRangeChange={setTimeRange}
+            />
+          </div>
           <div className="h-96 bg-chart-bg rounded-lg p-4">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart data={filteredChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                 <XAxis 
                   dataKey="date" 
@@ -534,18 +606,15 @@ const TradingDashboard = () => {
                 />
                 <Legend />
                 
-                {/* Bollinger Bands */}
                 <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} />
                 <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} />
                 <Line type="monotone" dataKey="bbMiddle" stroke="hsl(var(--muted-foreground))" strokeWidth={1} name="BB Middle" dot={false} />
                 
-                {/* Moving Averages */}
                 <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} />
                 <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} />
                 <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />
                 <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />
                 
-                {/* Price */}
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -556,10 +625,17 @@ const TradingDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* RSI Chart */}
           <Card className="p-6 shadow-card border-border">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">RSI (14)</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">RSI (14)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
             <div className="h-64 bg-chart-bg rounded-lg p-4">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
@@ -584,10 +660,17 @@ const TradingDashboard = () => {
 
           {/* MACD Chart */}
           <Card className="p-6 shadow-card border-border">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">MACD (12,26,9)</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">MACD (12,26,9)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
             <div className="h-64 bg-chart-bg rounded-lg p-4">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData}>
+                <ComposedChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
