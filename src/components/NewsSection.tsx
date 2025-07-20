@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { ExternalLink, TrendingUp, TrendingDown, Calendar, AlertCircle } from 'lucide-react';
+import { ExternalLink, TrendingUp, TrendingDown, Calendar, AlertCircle, Database } from 'lucide-react';
 import { useNewsData } from '../hooks/useNewsData';
 
 interface NewsSectionProps {
@@ -26,28 +26,31 @@ const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
 
   const formatDate = (dateString: string) => {
     try {
-      // Alpha Vantage format: YYYYMMDDTHHMMSS (e.g., "20240720T123000")
-      if (dateString.includes('T') && dateString.length === 15) {
-        const year = dateString.substring(0, 4);
-        const month = dateString.substring(4, 6);
-        const day = dateString.substring(6, 8);
-        const hour = dateString.substring(9, 11);
-        const minute = dateString.substring(11, 13);
-        
-        // Create ISO format: YYYY-MM-DDTHH:mm:ss
-        const isoString = `${year}-${month}-${day}T${hour}:${minute}:00`;
-        const date = new Date(isoString);
-        
-        return date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+      // Handle both database timestamp and Alpha Vantage formats
+      const date = new Date(dateString);
+      
+      if (isNaN(date.getTime())) {
+        // Try Alpha Vantage format: YYYYMMDDTHHMMSS
+        if (dateString.includes('T') && dateString.length === 15) {
+          const year = dateString.substring(0, 4);
+          const month = dateString.substring(4, 6);
+          const day = dateString.substring(6, 8);
+          const hour = dateString.substring(9, 11);
+          const minute = dateString.substring(11, 13);
+          
+          const isoString = `${year}-${month}-${day}T${hour}:${minute}:00`;
+          const parsedDate = new Date(isoString);
+          
+          return parsedDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
       }
       
-      // Fallback for other formats
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -58,12 +61,22 @@ const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
     }
   };
 
+  const isFromCache = (article: any) => {
+    return article.created_at || article.id; // Database articles have these fields
+  };
+
   return (
     <Card className="p-6 shadow-card border-border">
       <div className="flex items-center gap-2 mb-6">
         <ExternalLink className="w-5 h-5 text-primary" />
         <h2 className="text-xl font-semibold text-foreground">Market News & Sentiment</h2>
         <span className="text-sm text-muted-foreground">({ticker})</span>
+        {newsData && newsData.length > 0 && isFromCache(newsData[0]) && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Database className="w-3 h-3" />
+            <span>Cached</span>
+          </div>
+        )}
       </div>
 
       {isLoading && (
@@ -88,7 +101,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
             
             return (
               <div
-                key={index}
+                key={article.id || article.url || index}
                 className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">

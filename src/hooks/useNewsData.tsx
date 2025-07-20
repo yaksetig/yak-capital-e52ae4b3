@@ -2,6 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 interface NewsArticle {
+  id?: string;
+  ticker?: string;
   title: string;
   url: string;
   time_published: string;
@@ -22,46 +24,44 @@ interface NewsArticle {
     ticker_sentiment_score: string;
     ticker_sentiment_label: string;
   }>;
+  created_at?: string;
+  updated_at?: string;
 }
-
-interface NewsResponse {
-  items: string;
-  sentiment_score_definition: string;
-  relevance_score_definition: string;
-  feed: NewsArticle[];
-}
-
-const ALPHA_VANTAGE_API_KEY = '4SXBRY6VC62LXW21';
 
 const fetchNewsData = async (ticker: string): Promise<NewsArticle[]> => {
-  const cryptoTicker = `CRYPTO:${ticker}`;
-  const timeFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10).replace(/-/g, '') + 'T0000';
-  
-  const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${cryptoTicker}&time_from=${timeFrom}&limit=50&sort=RELEVANCE&apikey=${ALPHA_VANTAGE_API_KEY}`;
-  
   console.log('Fetching news for ticker:', ticker);
   
-  const response = await fetch(url);
+  // Call our Supabase Edge Function instead of direct API
+  const response = await fetch('/api/fetch-news', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ ticker: ticker.toUpperCase() }),
+  });
   
   if (!response.ok) {
-    throw new Error(`News API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `News API error: ${response.status}`);
   }
   
-  const data: NewsResponse = await response.json();
+  const data: NewsArticle[] = await response.json();
   
-  if (data.feed && Array.isArray(data.feed)) {
-    return data.feed;
+  if (!Array.isArray(data)) {
+    throw new Error('Invalid news data format');
   }
   
-  throw new Error('Invalid news data format');
+  return data;
 };
 
 export const useNewsData = (ticker: string) => {
   return useQuery({
     queryKey: ['news', ticker],
     queryFn: () => fetchNewsData(ticker),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 60 * 1000, // 30 minutes (longer since backend handles freshness)
+    refetchInterval: 60 * 60 * 1000, // 1 hour
     enabled: !!ticker,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
