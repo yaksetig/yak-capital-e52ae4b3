@@ -1060,7 +1060,12 @@ const TradingDashboard = () => {
           {/* MACD Chart */}
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-semibold text-foreground">MACD (12,26,9)</h2>
+              <div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Moving average convergence divergence (MACD)</h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  MACD is calculated by subtracting the 26-period Exponential Moving Average (EMA) from the 12-period EMA. The result of that calculation is the MACD line. A nine-day EMA of the MACD called the "signal line", is then plotted in addition to the MACD line. This together functions as a trigger for Bitcoin BTC buy and sell.
+                </p>
+              </div>
               <TimeRangeSelector 
                 selectedRange={timeRange}
                 onRangeChange={setTimeRange}
@@ -1074,7 +1079,29 @@ const TradingDashboard = () => {
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
                   <Tooltip 
-                    formatter={(value, name) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', name]}
+                    formatter={(value, name, props) => {
+                      const currentData = props.payload;
+                      if (name === 'MACD' && currentData) {
+                        const macdValue = currentData.macd;
+                        const signalValue = currentData.macdSignal;
+                        
+                        if (macdValue !== null && signalValue !== null) {
+                          const recommendation = macdValue > signalValue ? 'Buy' : 'Sell';
+                          const recommendationColor = macdValue > signalValue ? '#22c55e' : '#ef4444';
+                          
+                          return [
+                            <div key="macd-tooltip">
+                              <div>{typeof value === 'number' ? value.toFixed(4) : 'N/A'}</div>
+                              <div style={{ color: recommendationColor, fontWeight: 'bold', marginTop: '4px' }}>
+                                Recommendation: {recommendation}
+                              </div>
+                            </div>,
+                            name
+                          ];
+                        }
+                      }
+                      return [typeof value === 'number' ? value.toFixed(4) : 'N/A', name];
+                    }}
                     labelFormatter={(label) => `Date: ${formatDate(label)}`}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -1086,7 +1113,6 @@ const TradingDashboard = () => {
                   <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
                    <Line type="monotone" dataKey="macd" stroke="hsl(var(--primary))" strokeWidth={2} name="MACD" dot={false} isAnimationActive={false} />
                    <Line type="monotone" dataKey="macdSignal" stroke="hsl(var(--bearish))" strokeWidth={2} name="Signal" dot={false} isAnimationActive={false} />
-                   <Bar dataKey="macdHistogram" fill="hsl(var(--bullish))" name="Histogram" isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
