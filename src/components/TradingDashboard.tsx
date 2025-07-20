@@ -455,10 +455,17 @@ const TradingDashboard = () => {
           };
         }
         
-        // Add cycle projection values
-        if (proj.cycleId === 'cycle-0') acc[proj.timestamp].cycle0 = chartData[chartData.length - 1].price + proj.value;
-        if (proj.cycleId === 'cycle-1') acc[proj.timestamp].cycle1 = chartData[chartData.length - 1].price + proj.value;
-        if (proj.cycleId === 'cycle-2') acc[proj.timestamp].cycle2 = chartData[chartData.length - 1].price + proj.value;
+        // Add cycle projection values (only if meaningful - not zero or very small)
+        const basePrice = chartData[chartData.length - 1].price;
+        if (proj.cycleId === 'cycle-0' && Math.abs(proj.value) > basePrice * 0.001) {
+          acc[proj.timestamp].cycle0 = basePrice + proj.value;
+        }
+        if (proj.cycleId === 'cycle-1' && Math.abs(proj.value) > basePrice * 0.001) {
+          acc[proj.timestamp].cycle1 = basePrice + proj.value;
+        }
+        if (proj.cycleId === 'cycle-2' && Math.abs(proj.value) > basePrice * 0.001) {
+          acc[proj.timestamp].cycle2 = basePrice + proj.value;
+        }
         
         return acc;
       }, {});
