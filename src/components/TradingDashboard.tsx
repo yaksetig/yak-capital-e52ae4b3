@@ -2,13 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InfoCard from './InfoCard';
 import TimeRangeSelector from './TimeRangeSelector';
 import ChartControls from './ChartControls';
 import CycleAnalysisPanel from './CycleAnalysisPanel';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
+import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -38,6 +40,9 @@ const TradingDashboard = () => {
   const [showCycleAnalysis, setShowCycleAnalysis] = useState(false);
   const [showCycleProjections, setShowCycleProjections] = useState(false);
 
+  // Fear and Greed Index
+  const { data: fearGreedData, loading: fearGreedLoading, error: fearGreedError, refetch: refetchFearGreed } = useFearGreedIndex();
+
   // Configuration
   const LOOKBACK_DAYS = 201;
   const SMA_PERIODS = [5, 20, 50, 100, 200];
@@ -49,7 +54,6 @@ const TradingDashboard = () => {
   const MACD_SLOW = 26;
   const MACD_SIGNAL = 9;
 
-  // Technical indicator calculation functions
   const calculateSMA = (prices, period, offset = 0) => {
     const startIndex = prices.length - period - offset;
     const endIndex = prices.length - offset;
@@ -174,7 +178,6 @@ const TradingDashboard = () => {
     };
   };
 
-  // Fetch data from Binance API
   const fetchBinanceData = async () => {
     setLoading(true);
     setError(null);
@@ -198,7 +201,6 @@ const TradingDashboard = () => {
     }
   };
 
-  // Filter chart data based on selected time range
   const getFilteredChartData = (chartData) => {
     if (timeRange === 'all') return chartData;
     
@@ -206,7 +208,6 @@ const TradingDashboard = () => {
     return chartData.slice(-daysToShow);
   };
 
-  // Calculate dynamic Y-axis domain
   const calculateYAxisDomain = (data, padding = 10) => {
     if (!data || data.length === 0) return ['auto', 'auto'];
     
@@ -219,7 +220,6 @@ const TradingDashboard = () => {
     return [min - paddingAmount, max + paddingAmount];
   };
 
-  // Chart control handlers
   const handleYAxisPaddingChange = (padding) => {
     setYAxisPadding(padding);
   };
@@ -256,7 +256,6 @@ const TradingDashboard = () => {
     setAutoFit(true);
   };
 
-  // Process raw data and calculate indicators
   const processedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
 
@@ -289,7 +288,7 @@ const TradingDashboard = () => {
     
     const currentPrice = prices[prices.length - 1];
     
-    const currentAbove = (currentSMAs as any).sma50 > (currentSMAs as any).sma200;
+    const currentAbove = currentSMAs.sma50 > currentSMAs.sma200;
     const previousAbove = yesterdaySMA50 > yesterdaySMA200;
     
     let crossSignal = "none";
@@ -308,14 +307,14 @@ const TradingDashboard = () => {
       rsiSignal = "Neutral";
     }
 
-    const priceAboveSMA20 = currentPrice > (currentSMAs as any).sma20;
-    const priceAboveSMA50 = currentPrice > (currentSMAs as any).sma50;
-    const priceAboveSMA200 = currentPrice > (currentSMAs as any).sma200;
-    const priceAboveEMA20 = currentPrice > (currentEMAs as any).ema20;
-    const priceAboveEMA50 = currentPrice > (currentEMAs as any).ema50;
+    const priceAboveSMA20 = currentPrice > currentSMAs.sma20;
+    const priceAboveSMA50 = currentPrice > currentSMAs.sma50;
+    const priceAboveSMA200 = currentPrice > currentSMAs.sma200;
+    const priceAboveEMA20 = currentPrice > currentEMAs.ema20;
+    const priceAboveEMA50 = currentPrice > currentEMAs.ema50;
     const priceNearBBLower = currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1);
-    const sma20AboveSMA50 = (currentSMAs as any).sma20 > (currentSMAs as any).sma50;
-    const sma50AboveSMA200 = (currentSMAs as any).sma50 > (currentSMAs as any).sma200;
+    const sma20AboveSMA50 = currentSMAs.sma20 > currentSMAs.sma50;
+    const sma50AboveSMA200 = currentSMAs.sma50 > currentSMAs.sma200;
 
     let bullishScore = 0;
     if (priceAboveSMA20) bullishScore++;
@@ -471,17 +470,40 @@ const TradingDashboard = () => {
       }, {});
       
       // Add projection data points to chart
-      const projectionDataPoints = Object.values(projectionsByTimestamp) as any[];
+      const projectionDataPoints = Object.values(projectionsByTimestamp);
       extendedChartData = [...chartData, ...projectionDataPoints];
     }
 
     return { chartData: extendedChartData, indicators, cycles, cycleStrength, cycleProjections };
   }, [rawData, showCycleAnalysis, showCycleProjections]);
 
-  // Fetch data on component mount and when symbol/interval changes
   useEffect(() => {
     fetchBinanceData();
   }, [symbol, interval]);
+
+  const getRSIDescription = (rsi) => {
+    if (rsi < 30) return "Oversold";
+    if (rsi > 70) return "Overbought";
+    return "Neutral";
+  };
+
+  const getRSIColor = (rsi) => {
+    if (rsi < 30) return 'text-bullish';
+    if (rsi > 70) return 'text-bearish';
+    return 'text-neutral';
+  };
+
+  const getFearGreedIcon = (classification) => {
+    if (classification.toLowerCase().includes('fear')) return Frown;
+    if (classification.toLowerCase().includes('greed')) return Smile;
+    return Meh;
+  };
+
+  const getFearGreedColor = (classification) => {
+    if (classification.toLowerCase().includes('fear')) return 'text-bearish';
+    if (classification.toLowerCase().includes('greed')) return 'text-bullish';
+    return 'text-neutral';
+  };
 
   const formatPrice = (value) => {
     if (value === null || value === undefined) return 'N/A';
@@ -494,7 +516,6 @@ const TradingDashboard = () => {
     const num = Math.abs(value);
     
     if (num < 1000) {
-      // For prices under $1000, show full amount with appropriate decimals
       if (num < 1) {
         return `$${value.toFixed(4)}`;
       } else if (num < 10) {
@@ -503,7 +524,6 @@ const TradingDashboard = () => {
         return `$${Math.round(value)}`;
       }
     } else if (num < 1000000) {
-      // For prices $1k - $999k, show with "k"
       const kValue = value / 1000;
       if (kValue < 10) {
         return `$${kValue.toFixed(1)}k`;
@@ -511,7 +531,6 @@ const TradingDashboard = () => {
         return `$${Math.round(kValue)}k`;
       }
     } else {
-      // For prices >= $1M, show with "M"
       const mValue = value / 1000000;
       if (mValue < 10) {
         return `$${mValue.toFixed(1)}M`;
@@ -533,7 +552,6 @@ const TradingDashboard = () => {
     }
   };
 
-  // Educational content data
   const educationalContent = [
     {
       title: "Moving Averages (SMA/EMA)",
@@ -655,7 +673,10 @@ const TradingDashboard = () => {
             </Button>
             
             <Button 
-              onClick={fetchBinanceData}
+              onClick={() => {
+                fetchBinanceData();
+                refetchFearGreed();
+              }}
               disabled={loading}
               className="bg-gradient-primary shadow-trading"
             >
@@ -685,8 +706,8 @@ const TradingDashboard = () => {
           </CollapsibleContent>
         </Collapsible>
         
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        {/* Key Metrics Grid - Updated with Fear & Greed, improved RSI, removed Bullish Score and MACD */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
           <Card className="p-4 shadow-card border-border">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-primary" />
@@ -697,30 +718,24 @@ const TradingDashboard = () => {
           
           <Card className="p-4 shadow-card border-border">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-neutral" />
-              <h3 className="text-sm font-semibold text-muted-foreground">RSI (14)</h3>
+              <Brain className="w-4 h-4 text-neutral" />
+              <UITooltip>
+                <TooltipTrigger>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Market Momentum</h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">RSI (Relative Strength Index) measures momentum. Values above 70 suggest overbought conditions, below 30 suggest oversold conditions.</p>
+                </TooltipContent>
+              </UITooltip>
             </div>
-            <p className={`text-2xl font-bold ${indicators.rsi > 70 ? 'text-bearish' : indicators.rsi < 30 ? 'text-bullish' : 'text-neutral'}`}>
-              {indicators.rsi ? indicators.rsi.toFixed(1) : 'N/A'}
-            </p>
-          </Card>
-          
-          <Card className="p-4 shadow-card border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-muted-foreground">MACD</h3>
+            <div className="flex items-center gap-2">
+              <p className={`text-xl font-bold ${getRSIColor(indicators.rsi)}`}>
+                {indicators.rsi ? indicators.rsi.toFixed(0) : 'N/A'}
+              </p>
+              <span className={`text-sm font-medium ${getRSIColor(indicators.rsi)}`}>
+                {indicators.rsi ? getRSIDescription(indicators.rsi) : ''}
+              </span>
             </div>
-            <p className={`text-xl font-bold ${indicators.macd > indicators.macdSignal ? 'text-bullish' : 'text-bearish'}`}>
-              {indicators.macd ? indicators.macd.toFixed(2) : 'N/A'}
-            </p>
-          </Card>
-          
-          <Card className="p-4 shadow-card border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-muted-foreground">Bullish Score</h3>
-            </div>
-            <p className="text-2xl font-bold text-primary">{indicators.bullishScore}/11</p>
           </Card>
           
           <Card className="p-4 shadow-card border-border">
@@ -741,12 +756,39 @@ const TradingDashboard = () => {
           
           <Card className="p-4 shadow-card border-border">
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-muted-foreground">SMA 50/200</h3>
+              {fearGreedData ? (
+                (() => {
+                  const IconComponent = getFearGreedIcon(fearGreedData.value_classification);
+                  return <IconComponent className="w-4 h-4 text-primary" />;
+                })()
+              ) : (
+                <Activity className="w-4 h-4 text-primary" />
+              )}
+              <UITooltip>
+                <TooltipTrigger>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Fear & Greed</h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">The Fear & Greed Index measures market emotions. Extreme fear can indicate buying opportunities, while extreme greed may suggest caution.</p>
+                </TooltipContent>
+              </UITooltip>
             </div>
-            <p className={`text-lg font-bold ${(indicators as any).sma50 > (indicators as any).sma200 ? 'text-bullish' : 'text-bearish'}`}>
-              {(indicators as any).sma50 > (indicators as any).sma200 ? 'Golden' : 'Death'} Cross
-            </p>
+            {fearGreedLoading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : fearGreedError ? (
+              <p className="text-xs text-destructive">Error loading</p>
+            ) : fearGreedData ? (
+              <div className="flex items-center gap-2">
+                <p className={`text-xl font-bold ${getFearGreedColor(fearGreedData.value_classification)}`}>
+                  {fearGreedData.value}
+                </p>
+                <span className={`text-sm font-medium ${getFearGreedColor(fearGreedData.value_classification)}`}>
+                  {fearGreedData.value_classification}
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">N/A</p>
+            )}
           </Card>
         </div>
 
