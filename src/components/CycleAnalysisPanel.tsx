@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -89,7 +90,7 @@ const CycleAnalysisPanel: React.FC<CycleAnalysisPanelProps> = ({
           )}
         </div>
 
-        {/* Analysis Notes */}
+        {/* Simplified Analysis Note */}
         {cycles.length > 0 && (
           <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
             <p>

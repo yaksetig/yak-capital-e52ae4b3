@@ -9,6 +9,8 @@ import InfoCard from './InfoCard';
 import TimeRangeSelector from './TimeRangeSelector';
 import ChartControls from './ChartControls';
 import CycleAnalysisPanel from './CycleAnalysisPanel';
+import NewsSection from './NewsSection';
+import CycleProjectionModal from './CycleProjectionModal';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 
@@ -20,6 +22,7 @@ const TradingDashboard = () => {
   const [interval, setInterval] = useState('1d');
   const [timeRange, setTimeRange] = useState('60');
   const [showEducation, setShowEducation] = useState(false);
+  const [selectedCycleModal, setSelectedCycleModal] = useState<string | null>(null);
 
   // Chart zoom and display controls
   const [yAxisPadding, setYAxisPadding] = useState(10);
@@ -262,7 +265,7 @@ const TradingDashboard = () => {
     const prices = rawData.map(candle => parseFloat(candle[4]));
     
     if (prices.length < LOOKBACK_DAYS) {
-      return { chartData: [], indicators: null };
+      return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
     }
 
     const currentSMAs = {};
@@ -288,8 +291,9 @@ const TradingDashboard = () => {
     
     const currentPrice = prices[prices.length - 1];
     
-    const currentAbove = currentSMAs.sma50 > currentSMAs.sma200;
-    const previousAbove = yesterdaySMA50 > yesterdaySMA200;
+    // Ensure SMAs exist before comparison
+    const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
+    const previousAbove = (yesterdaySMA50 && yesterdaySMA200) ? yesterdaySMA50 > yesterdaySMA200 : false;
     
     let crossSignal = "none";
     if (!previousAbove && currentAbove) {
@@ -307,14 +311,14 @@ const TradingDashboard = () => {
       rsiSignal = "Neutral";
     }
 
-    const priceAboveSMA20 = currentPrice > currentSMAs.sma20;
-    const priceAboveSMA50 = currentPrice > currentSMAs.sma50;
-    const priceAboveSMA200 = currentPrice > currentSMAs.sma200;
-    const priceAboveEMA20 = currentPrice > currentEMAs.ema20;
-    const priceAboveEMA50 = currentPrice > currentEMAs.ema50;
+    const priceAboveSMA20 = currentSMAs.sma20 ? currentPrice > currentSMAs.sma20 : false;
+    const priceAboveSMA50 = currentSMAs.sma50 ? currentPrice > currentSMAs.sma50 : false;
+    const priceAboveSMA200 = currentSMAs.sma200 ? currentPrice > currentSMAs.sma200 : false;
+    const priceAboveEMA20 = currentEMAs.ema20 ? currentPrice > currentEMAs.ema20 : false;
+    const priceAboveEMA50 = currentEMAs.ema50 ? currentPrice > currentEMAs.ema50 : false;
     const priceNearBBLower = currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1);
-    const sma20AboveSMA50 = currentSMAs.sma20 > currentSMAs.sma50;
-    const sma50AboveSMA200 = currentSMAs.sma50 > currentSMAs.sma200;
+    const sma20AboveSMA50 = (currentSMAs.sma20 && currentSMAs.sma50) ? currentSMAs.sma20 > currentSMAs.sma50 : false;
+    const sma50AboveSMA200 = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
 
     let bullishScore = 0;
     if (priceAboveSMA20) bullishScore++;
@@ -747,7 +751,14 @@ const TradingDashboard = () => {
               ) : (
                 <Activity className="w-4 h-4 text-neutral" />
               )}
-              <h3 className="text-sm font-semibold text-muted-foreground">Sentiment</h3>
+              <UITooltip>
+                <TooltipTrigger>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Technical Sentiment</h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Overall sentiment based on multiple technical indicators including moving averages, RSI, and MACD signals.</p>
+                </TooltipContent>
+              </UITooltip>
             </div>
             <p className={`text-xl font-bold capitalize ${getSentimentColor(indicators.marketSentiment)}`}>
               {indicators.marketSentiment}
@@ -867,7 +878,7 @@ const TradingDashboard = () => {
                 
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
                 
-                {/* Cycle Projection Lines - only show if they have data */}
+                {/* Cycle Projection Lines with click handlers */}
                 {showCycleProjections && (
                   <>
                     {chartData.some(d => d.cycle0) && (
@@ -880,6 +891,8 @@ const TradingDashboard = () => {
                         name="Cycle 1 Projection" 
                         dot={false}
                         connectNulls={false}
+                        onClick={() => setSelectedCycleModal('cycle-1')}
+                        style={{ cursor: 'pointer' }}
                       />
                     )}
                     {chartData.some(d => d.cycle1) && (
@@ -892,6 +905,8 @@ const TradingDashboard = () => {
                         name="Cycle 2 Projection" 
                         dot={false}
                         connectNulls={false}
+                        onClick={() => setSelectedCycleModal('cycle-2')}
+                        style={{ cursor: 'pointer' }}
                       />
                     )}
                     {chartData.some(d => d.cycle2) && (
@@ -904,6 +919,8 @@ const TradingDashboard = () => {
                         name="Cycle 3 Projection" 
                         dot={false}
                         connectNulls={false}
+                        onClick={() => setSelectedCycleModal('cycle-3')}
+                        style={{ cursor: 'pointer' }}
                       />
                     )}
                   </>
@@ -1030,6 +1047,16 @@ const TradingDashboard = () => {
             </table>
           </div>
         </Card>
+
+        {/* News Section */}
+        <NewsSection symbol={symbol} />
+
+        {/* Cycle Projection Modal */}
+        <CycleProjectionModal
+          isOpen={selectedCycleModal !== null}
+          onClose={() => setSelectedCycleModal(null)}
+          cycleId={selectedCycleModal}
+        />
       </div>
     </div>
   );
