@@ -56,6 +56,89 @@ const TradingDashboard = () => {
   const MACD_SLOW = 26;
   const MACD_SIGNAL = 9;
 
+  // Helper function to calculate True Range
+  const calculateTrueRange = (high, low, previousClose) => {
+    const tr1 = high - low;
+    const tr2 = Math.abs(high - previousClose);
+    const tr3 = Math.abs(low - previousClose);
+    return Math.max(tr1, tr2, tr3);
+  };
+
+  // Helper function to calculate ATR (Average True Range)
+  const calculateATR = (candles, period) => {
+    if (candles.length < period + 1) return null;
+    
+    let trueRanges = [];
+    
+    // Calculate true ranges
+    for (let i = 1; i < candles.length; i++) {
+      const high = parseFloat(candles[i][2]);
+      const low = parseFloat(candles[i][3]);
+      const previousClose = parseFloat(candles[i-1][4]);
+      
+      const tr = calculateTrueRange(high, low, previousClose);
+      trueRanges.push(tr);
+    }
+    
+    // Calculate ATR using simple moving average of true ranges
+    if (trueRanges.length < period) return null;
+    
+    const recentTRs = trueRanges.slice(-period);
+    const atr = recentTRs.reduce((sum, tr) => sum + tr, 0) / period;
+    
+    return atr;
+  };
+
+  // Helper function to calculate VWAP
+  const calculateVWAP = (candles) => {
+    if (candles.length === 0) return null;
+    
+    let totalVolume = 0;
+    let totalVolumePrice = 0;
+    
+    for (let i = 0; i < candles.length; i++) {
+      const high = parseFloat(candles[i][2]);
+      const low = parseFloat(candles[i][3]);
+      const close = parseFloat(candles[i][4]);
+      const volume = parseFloat(candles[i][5]);
+      
+      // Typical price (HLC/3)
+      const typicalPrice = (high + low + close) / 3;
+      
+      totalVolume += volume;
+      totalVolumePrice += (typicalPrice * volume);
+    }
+    
+    return totalVolume > 0 ? totalVolumePrice / totalVolume : null;
+  };
+
+  // Helper function to calculate VWAP for chart data (progressive calculation)
+  const calculateVWAPArray = (candles) => {
+    if (candles.length === 0) return [];
+    
+    const vwapArray = [];
+    let cumulativeVolume = 0;
+    let cumulativeVolumePrice = 0;
+    
+    for (let i = 0; i < candles.length; i++) {
+      const high = parseFloat(candles[i][2]);
+      const low = parseFloat(candles[i][3]);
+      const close = parseFloat(candles[i][4]);
+      const volume = parseFloat(candles[i][5]);
+      
+      // Typical price (HLC/3)
+      const typicalPrice = (high + low + close) / 3;
+      
+      cumulativeVolume += volume;
+      cumulativeVolumePrice += (typicalPrice * volume);
+      
+      const vwap = cumulativeVolume > 0 ? cumulativeVolumePrice / cumulativeVolume : null;
+      vwapArray.push(vwap);
+    }
+    
+    return vwapArray;
+  };
+
   const calculateSMA = (prices, period, offset = 0) => {
     const startIndex = prices.length - period - offset;
     const endIndex = prices.length - offset;
@@ -288,6 +371,10 @@ const TradingDashboard = () => {
     
     const macdResult = calculateMACD(prices, MACD_FAST, MACD_SLOW, MACD_SIGNAL);
     
+    // Calculate ATR and VWAP
+    const currentATR = calculateATR(rawData, 14);
+    const currentVWAP = calculateVWAP(rawData);
+    
     const currentPrice = prices[prices.length - 1];
     
     // Ensure SMAs exist before comparison
@@ -319,6 +406,7 @@ const TradingDashboard = () => {
     const priceAboveSMA200 = currentSMAs.sma200 ? currentPrice > currentSMAs.sma200 : false;
     const priceAboveEMA20 = currentEMAs.ema20 ? currentPrice > currentEMAs.ema20 : false;
     const priceAboveEMA50 = currentEMAs.ema50 ? currentPrice > currentEMAs.ema50 : false;
+    const priceAboveVWAP = currentVWAP ? currentPrice > currentVWAP : false;
     const priceNearBBLower = bbLower !== null && bbMiddle !== null ? currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1) : false;
     const sma20AboveSMA50 = (currentSMAs.sma20 && currentSMAs.sma50) ? currentSMAs.sma20 > currentSMAs.sma50 : false;
     const sma50AboveSMA200 = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
@@ -329,6 +417,7 @@ const TradingDashboard = () => {
     if (priceAboveSMA200) bullishScore++;
     if (priceAboveEMA20) bullishScore++;
     if (priceAboveEMA50) bullishScore++;
+    if (priceAboveVWAP) bullishScore++;
     if (sma20AboveSMA50) bullishScore++;
     if (sma50AboveSMA200) bullishScore++;
     if (crossSignal === "golden_cross") bullishScore++;
@@ -341,6 +430,8 @@ const TradingDashboard = () => {
     else if (bullishScore <= 3) marketSentiment = "bearish";
     else marketSentiment = "neutral";
 
+    // Prepare chart data with VWAP
+    const vwapArray = calculateVWAPArray(rawData.slice(-60));
     const chartData = rawData.slice(-60).map((candle, index) => {
       const timestamp = parseInt(candle[0]);
       const price = parseFloat(candle[4]);
@@ -349,12 +440,14 @@ const TradingDashboard = () => {
       
       const sliceIndex = rawData.length - 60 + index + 1;
       const pricesUpToThis = prices.slice(0, sliceIndex);
+      const candlesUpToThis = rawData.slice(0, sliceIndex);
       
       const sma20 = calculateSMA(pricesUpToThis, 20);
       const sma50 = calculateSMA(pricesUpToThis, 50);
       const ema20 = calculateEMA(pricesUpToThis, 20);
       const ema50 = calculateEMA(pricesUpToThis, 50);
       const rsi = calculateRSI(pricesUpToThis, RSI_PERIOD);
+      const atr = calculateATR(candlesUpToThis, 14);
       
       const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
       const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
@@ -386,7 +479,9 @@ const TradingDashboard = () => {
         rsi: rsi,
         macd: macd,
         macdSignal: macdSig,
-        macdHistogram: macdHist
+        macdHistogram: macdHist,
+        atr: atr,
+        vwap: vwapArray[index]
       };
     });
 
@@ -403,6 +498,8 @@ const TradingDashboard = () => {
       macdSignal: macdResult?.signal || null,
       macdHistogram: macdResult?.histogram || null,
       macdCrossover: macdResult?.crossover || null,
+      atr: currentATR,
+      vwap: currentVWAP,
       bullishScore,
       marketSentiment,
       crossSignal,
@@ -410,7 +507,8 @@ const TradingDashboard = () => {
       priceAboveSMA50,
       priceAboveSMA200,
       priceAboveEMA20,
-      priceAboveEMA50
+      priceAboveEMA50,
+      priceAboveVWAP
     };
 
     // Cycle analysis
@@ -454,6 +552,8 @@ const TradingDashboard = () => {
             macd: null,
             macdSignal: null,
             macdHistogram: null,
+            atr: null,
+            vwap: null,
             isProjection: true,
             cycle0: null,
             cycle1: null,
@@ -854,6 +954,9 @@ const TradingDashboard = () => {
                 {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />}
                 {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />}
                 
+                {/* VWAP Line */}
+                <Line type="monotone" dataKey="vwap" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3" name="VWAP" dot={false} />
+                
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
                 
                 {/* Cycle Projection Lines with click handlers */}
@@ -980,6 +1083,121 @@ const TradingDashboard = () => {
             </div>
           </Card>
         </div>
+
+        {/* Technical Indicators Summary */}
+        <Card className="p-6 mb-8 shadow-card border-border">
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Technical Indicators Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Trend Analysis */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-primary">Trend Analysis</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Price vs VWAP:</span>
+                  <span className={`font-medium ${indicators.priceAboveVWAP ? 'text-bullish' : 'text-bearish'}`}>
+                    {indicators.priceAboveVWAP ? 'Above' : 'Below'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>SMA 50/200 Cross:</span>
+                  <span className={`font-medium ${indicators.sma50 && indicators.sma200 && indicators.sma50 > indicators.sma200 ? 'text-bullish' : 'text-bearish'}`}>
+                    {indicators.crossSignal === 'golden_cross' ? 'Golden Cross' : 
+                     indicators.crossSignal === 'death_cross' ? 'Death Cross' : 
+                     indicators.sma50 && indicators.sma200 && indicators.sma50 > indicators.sma200 ? 'Bullish' : 'Bearish'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>MACD Signal:</span>
+                  <span className={`font-medium ${
+                    indicators.macdCrossover === 'bullish_crossover' ? 'text-bullish' : 
+                    indicators.macdCrossover === 'bearish_crossover' ? 'text-bearish' : 'text-neutral'
+                  }`}>
+                    {indicators.macdCrossover === 'bullish_crossover' ? 'Bullish Cross' :
+                     indicators.macdCrossover === 'bearish_crossover' ? 'Bearish Cross' : 'No Signal'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Momentum Analysis */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-accent">Momentum Analysis</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>RSI Signal:</span>
+                  <span className={`font-medium ${
+                    indicators.rsiSignal === 'Overbought' ? 'text-bearish' : 
+                    indicators.rsiSignal === 'Oversold' ? 'text-bullish' : 'text-neutral'
+                  }`}>
+                    {indicators.rsiSignal}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>RSI Value:</span>
+                  <span className="font-medium">{indicators.rsi ? indicators.rsi.toFixed(1) : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>MACD vs Signal:</span>
+                  <span className={`font-medium ${indicators.macd && indicators.macdSignal && indicators.macd > indicators.macdSignal ? 'text-bullish' : 'text-bearish'}`}>
+                    {indicators.macd && indicators.macdSignal ? (indicators.macd > indicators.macdSignal ? 'Above' : 'Below') : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Volatility & Volume */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-chart-1">Volatility & Volume</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>ATR (14):</span>
+                  <span className="font-medium">{indicators.atr ? `${indicators.atr.toFixed(2)}` : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>VWAP:</span>
+                  <span className="font-medium">{formatPrice(indicators.vwap)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>BB Position:</span>
+                  <span className={`font-medium ${
+                    indicators.bbUpper && indicators.currentPrice > indicators.bbUpper ? 'text-bearish' : 
+                    indicators.bbLower && indicators.currentPrice < indicators.bbLower ? 'text-bullish' : 'text-neutral'
+                  }`}>
+                    {indicators.bbUpper && indicators.currentPrice > indicators.bbUpper ? 'Above Upper' :
+                     indicators.bbLower && indicators.currentPrice < indicators.bbLower ? 'Below Lower' : 'In Range'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Overall Sentiment */}
+          <div className="mt-6 p-4 rounded-lg bg-card border">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Overall Market Sentiment</h3>
+                <p className="text-sm text-muted-foreground">Based on {indicators.bullishScore}/12 bullish signals</p>
+              </div>
+              <div className="text-right">
+                <p className={`text-2xl font-bold capitalize ${getSentimentColor(indicators.marketSentiment)}`}>
+                  {indicators.marketSentiment}
+                </p>
+                <div className="w-32 bg-muted rounded-full h-2 mt-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      indicators.marketSentiment === 'bullish' ? 'bg-bullish' :
+                      indicators.marketSentiment === 'bearish' ? 'bg-bearish' : 'bg-neutral'
+                    }`}
+                    style={{
+                      width: `${(indicators.bullishScore / 12) * 100}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
 
         {/* Moving Averages Table */}
         <Card className="p-6 shadow-card border-border">

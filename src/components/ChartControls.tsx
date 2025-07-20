@@ -63,6 +63,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
     { key: 'bbUpper', label: 'BB Upper', color: 'text-muted-foreground' },
     { key: 'bbMiddle', label: 'BB Middle', color: 'text-muted-foreground' },
     { key: 'bbLower', label: 'BB Lower', color: 'text-muted-foreground' },
+    { key: 'vwap', label: 'VWAP', color: 'text-chart-1' },
   ];
 
   return (
