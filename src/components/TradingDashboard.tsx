@@ -14,26 +14,26 @@ import { useFearGreedIndex } from '@/hooks/useFearGreedIndex';
 // Helper function to generate mock data
 const generateMockData = (timeRange: string) => {
   const now = new Date();
-  let numberOfDataPoints = 30; // Default number of data points
+  let numberOfDataPoints = 30;
 
   switch (timeRange) {
     case '1D':
-      numberOfDataPoints = 24; // Hourly data for 1 day
+      numberOfDataPoints = 24;
       break;
     case '1W':
-      numberOfDataPoints = 7; // Daily data for 1 week
+      numberOfDataPoints = 7;
       break;
     case '1M':
-      numberOfDataPoints = 30; // Daily data for 1 month
+      numberOfDataPoints = 30;
       break;
     case '3M':
-      numberOfDataPoints = 90; // Daily data for 3 months
+      numberOfDataPoints = 90;
       break;
     case '1Y':
-      numberOfDataPoints = 365; // Daily data for 1 year
+      numberOfDataPoints = 365;
       break;
     case '5Y':
-      numberOfDataPoints = 5 * 365; // Daily data for 5 years
+      numberOfDataPoints = 5 * 365;
       break;
     default:
       numberOfDataPoints = 30;
@@ -60,7 +60,7 @@ const generateMockData = (timeRange: string) => {
     });
   }
 
-  return data.reverse(); // Ensure the data is in chronological order
+  return data.reverse();
 };
 
 // Function to calculate Simple Moving Average (SMA)
@@ -169,6 +169,23 @@ const TradingDashboard = () => {
     volume: true
   });
 
+  // Chart controls state
+  const [yAxisPadding, setYAxisPadding] = useState(10);
+  const [autoFit, setAutoFit] = useState(true);
+  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
+  const [chartHeight, setChartHeight] = useState(400);
+  const [visibleLines, setVisibleLines] = useState({
+    sma20: true,
+    sma50: true,
+    ema20: true,
+    ema50: true,
+    bbUpper: true,
+    bbLower: true,
+    vwap: true,
+  });
+  const [showCycleAnalysis, setShowCycleAnalysis] = useState(false);
+
   const { data: fearGreedData, loading: fearGreedLoading } = useFearGreedIndex();
 
   const data = useMemo(() => generateMockData(selectedTimeRange), [selectedTimeRange]);
@@ -273,6 +290,35 @@ const TradingDashboard = () => {
     item.macdSignal = macdSignal[index];
   });
 
+  // Chart control handlers
+  const handlePriceRangeChange = (min: number, max: number) => {
+    setMinPrice(min);
+    setMaxPrice(max);
+  };
+
+  const handleLineVisibilityChange = (line: string, visible: boolean) => {
+    setVisibleLines(prev => ({
+      ...prev,
+      [line]: visible
+    }));
+  };
+
+  const handleZoomIn = () => {
+    console.log('Zoom in');
+  };
+
+  const handleZoomOut = () => {
+    console.log('Zoom out');
+  };
+
+  const handleResetZoom = () => {
+    console.log('Reset zoom');
+  };
+
+  const handleFocusRecent = () => {
+    console.log('Focus recent');
+  };
+
   const latestData = data[data.length - 1];
   const rsiData = calculateRSI(data.map(d => d.close));
   const currentRSI = rsiData[rsiData.length - 1];
@@ -293,21 +339,23 @@ const TradingDashboard = () => {
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <TimeRangeSelector selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
         <ChartControls 
-          yAxisPadding={0}
-          onYAxisPaddingChange={() => {}}
-          autoFit={true}
-          onAutoFitChange={() => {}}
-          onPriceRangeChange={() => {}}
-          chartHeight={400}
-          onChartHeightChange={() => {}}
-          visibleLines={{}}
-          onLineVisibilityChange={() => {}}
-          showCycleAnalysis={false}
-          onCycleAnalysisChange={() => {}}
-          onZoomIn={() => {}}
-          onZoomOut={() => {}}
-          onResetZoom={() => {}}
-          onFocusRecent={() => {}}
+          yAxisPadding={yAxisPadding}
+          onYAxisPaddingChange={setYAxisPadding}
+          autoFit={autoFit}
+          onAutoFitChange={setAutoFit}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onPriceRangeChange={handlePriceRangeChange}
+          chartHeight={chartHeight}
+          onChartHeightChange={setChartHeight}
+          visibleLines={visibleLines}
+          onLineVisibilityChange={handleLineVisibilityChange}
+          showCycleAnalysis={showCycleAnalysis}
+          onCycleAnalysisChange={setShowCycleAnalysis}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetZoom={handleResetZoom}
+          onFocusRecent={handleFocusRecent}
         />
       </div>
 
@@ -534,7 +582,7 @@ const TradingDashboard = () => {
                 
                 <div className="p-4 border rounded-lg">
                   <h4 className="font-medium">Price Z-Score</h4>
-                  <p className="text-2xl font-bold" style={{color: priceZScoreSignal.color.replace('text-', '')}}>
+                  <p className={`text-2xl font-bold ${priceZScoreSignal.color}`}>
                     {currentPriceZScore.toFixed(2)}
                   </p>
                   <p className="text-sm text-gray-600">{priceZScoreSignal.description}</p>
@@ -542,7 +590,7 @@ const TradingDashboard = () => {
                 
                 <div className="p-4 border rounded-lg">
                   <h4 className="font-medium">Volume Z-Score</h4>
-                  <p className="text-2xl font-bold" style={{color: volumeZScoreSignal.color.replace('text-', '')}}>
+                  <p className={`text-2xl font-bold ${volumeZScoreSignal.color}`}>
                     {currentVolumeZScore.toFixed(2)}
                   </p>
                   <p className="text-sm text-gray-600">{volumeZScoreSignal.description}</p>
@@ -610,9 +658,9 @@ const TradingDashboard = () => {
                 <div>
                   <h4 className="font-medium">Z-Score Interpretation</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• |Z| {'>'}  2.5: Extreme deviation (strong reversal signal)</li>
-                    <li>• |Z| {'>'} 2.0: Significant deviation (moderate signal)</li>
-                    <li>• |Z| {'>'} 1.0: Minor deviation</li>
+                    <li>• |Z| > 2.5: Extreme deviation (strong reversal signal)</li>
+                    <li>• |Z| > 2.0: Significant deviation (moderate signal)</li>
+                    <li>• |Z| > 1.0: Minor deviation</li>
                     <li>• |Z| ≤ 1.0: Normal range</li>
                   </ul>
                 </div>
