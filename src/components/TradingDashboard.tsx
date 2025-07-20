@@ -268,12 +268,12 @@ const TradingDashboard = () => {
       return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
     }
 
-    const currentSMAs = {};
+    const currentSMAs: Record<string, number | null> = {};
     SMA_PERIODS.forEach(period => {
       currentSMAs[`sma${period}`] = calculateSMA(prices, period, 0);
     });
 
-    const currentEMAs = {};
+    const currentEMAs: Record<string, number | null> = {};
     EMA_PERIODS.forEach(period => {
       currentEMAs[`ema${period}`] = calculateEMA(prices, period);
     });
@@ -284,15 +284,15 @@ const TradingDashboard = () => {
     
     const bbMiddle = calculateSMA(prices, BB_PERIOD);
     const bbStdDev = calculateStandardDeviation(prices, BB_PERIOD);
-    const bbUpper = bbMiddle + (BB_MULTIPLIER * bbStdDev);
-    const bbLower = bbMiddle - (BB_MULTIPLIER * bbStdDev);
+    const bbUpper = bbMiddle !== null && bbStdDev !== null ? bbMiddle + (BB_MULTIPLIER * bbStdDev) : null;
+    const bbLower = bbMiddle !== null && bbStdDev !== null ? bbMiddle - (BB_MULTIPLIER * bbStdDev) : null;
     
     const macdResult = calculateMACD(prices, MACD_FAST, MACD_SLOW, MACD_SIGNAL);
     
     const currentPrice = prices[prices.length - 1];
     
     // Ensure SMAs exist before comparison
-    const currentAbove = ((currentSMAs as any)?.sma50 && (currentSMAs as any)?.sma200) ? (currentSMAs as any).sma50 > (currentSMAs as any).sma200 : false;
+    const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
     const previousAbove = (yesterdaySMA50 && yesterdaySMA200) ? yesterdaySMA50 > yesterdaySMA200 : false;
     
     let crossSignal = "none";
@@ -303,22 +303,26 @@ const TradingDashboard = () => {
     }
 
     let rsiSignal;
-    if (currentRSI < 30) {
-      rsiSignal = "Oversold";
-    } else if (currentRSI > 70) {
-      rsiSignal = "Overbought";
+    if (currentRSI !== null) {
+      if (currentRSI < 30) {
+        rsiSignal = "Oversold";
+      } else if (currentRSI > 70) {
+        rsiSignal = "Overbought";
+      } else {
+        rsiSignal = "Neutral";
+      }
     } else {
       rsiSignal = "Neutral";
     }
 
-    const priceAboveSMA20 = (currentSMAs as any)?.sma20 ? currentPrice > (currentSMAs as any).sma20 : false;
-    const priceAboveSMA50 = (currentSMAs as any)?.sma50 ? currentPrice > (currentSMAs as any).sma50 : false;
-    const priceAboveSMA200 = (currentSMAs as any)?.sma200 ? currentPrice > (currentSMAs as any).sma200 : false;
-    const priceAboveEMA20 = (currentEMAs as any)?.ema20 ? currentPrice > (currentEMAs as any).ema20 : false;
-    const priceAboveEMA50 = (currentEMAs as any)?.ema50 ? currentPrice > (currentEMAs as any).ema50 : false;
-    const priceNearBBLower = currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1);
-    const sma20AboveSMA50 = ((currentSMAs as any)?.sma20 && (currentSMAs as any)?.sma50) ? (currentSMAs as any).sma20 > (currentSMAs as any).sma50 : false;
-    const sma50AboveSMA200 = ((currentSMAs as any)?.sma50 && (currentSMAs as any)?.sma200) ? (currentSMAs as any).sma50 > (currentSMAs as any).sma200 : false;
+    const priceAboveSMA20 = currentSMAs.sma20 ? currentPrice > currentSMAs.sma20 : false;
+    const priceAboveSMA50 = currentSMAs.sma50 ? currentPrice > currentSMAs.sma50 : false;
+    const priceAboveSMA200 = currentSMAs.sma200 ? currentPrice > currentSMAs.sma200 : false;
+    const priceAboveEMA20 = currentEMAs.ema20 ? currentPrice > currentEMAs.ema20 : false;
+    const priceAboveEMA50 = currentEMAs.ema50 ? currentPrice > currentEMAs.ema50 : false;
+    const priceNearBBLower = bbLower !== null && bbMiddle !== null ? currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1) : false;
+    const sma20AboveSMA50 = (currentSMAs.sma20 && currentSMAs.sma50) ? currentSMAs.sma20 > currentSMAs.sma50 : false;
+    const sma50AboveSMA200 = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
 
     let bullishScore = 0;
     if (priceAboveSMA20) bullishScore++;
@@ -355,8 +359,8 @@ const TradingDashboard = () => {
       
       const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
       const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
-      const bbUp = bbMid ? bbMid + (BB_MULTIPLIER * bbStd) : null;
-      const bbLow = bbMid ? bbMid - (BB_MULTIPLIER * bbStd) : null;
+      const bbUp = bbMid !== null && bbStd !== null ? bbMid + (BB_MULTIPLIER * bbStd) : null;
+      const bbLow = bbMid !== null && bbStd !== null ? bbMid - (BB_MULTIPLIER * bbStd) : null;
       
       let macd = null, macdSig = null, macdHist = null;
       if (pricesUpToThis.length >= MACD_SLOW) {
@@ -710,8 +714,8 @@ const TradingDashboard = () => {
           </CollapsibleContent>
         </Collapsible>
         
-        {/* Key Metrics Grid - Updated with Fear & Greed, improved RSI, removed Bullish Score and MACD */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+        {/* Key Metrics Grid - Removed Technical Sentiment card */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card className="p-4 shadow-card border-border">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-primary" />
@@ -740,29 +744,6 @@ const TradingDashboard = () => {
                 {indicators.rsi ? getRSIDescription(indicators.rsi) : ''}
               </span>
             </div>
-          </Card>
-          
-          <Card className="p-4 shadow-card border-border">
-            <div className="flex items-center gap-2 mb-2">
-              {indicators.marketSentiment === 'bullish' ? (
-                <TrendingUp className="w-4 h-4 text-bullish" />
-              ) : indicators.marketSentiment === 'bearish' ? (
-                <TrendingDown className="w-4 h-4 text-bearish" />
-              ) : (
-                <Activity className="w-4 h-4 text-neutral" />
-              )}
-              <UITooltip>
-                <TooltipTrigger>
-                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Technical Sentiment</h3>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm">Overall sentiment based on multiple technical indicators including moving averages, RSI, and MACD signals.</p>
-                </TooltipContent>
-              </UITooltip>
-            </div>
-            <p className={`text-xl font-bold capitalize ${getSentimentColor(indicators.marketSentiment)}`}>
-              {indicators.marketSentiment}
-            </p>
           </Card>
           
           <Card className="p-4 shadow-card border-border">

@@ -26,6 +26,27 @@ const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
 
   const formatDate = (dateString: string) => {
     try {
+      // Alpha Vantage format: YYYYMMDDTHHMMSS (e.g., "20240720T123000")
+      if (dateString.includes('T') && dateString.length === 15) {
+        const year = dateString.substring(0, 4);
+        const month = dateString.substring(4, 6);
+        const day = dateString.substring(6, 8);
+        const hour = dateString.substring(9, 11);
+        const minute = dateString.substring(11, 13);
+        
+        // Create ISO format: YYYY-MM-DDTHH:mm:ss
+        const isoString = `${year}-${month}-${day}T${hour}:${minute}:00`;
+        const date = new Date(isoString);
+        
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+      
+      // Fallback for other formats
       return new Date(dateString).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
