@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InfoCard from './InfoCard';
@@ -61,6 +61,7 @@ const TradingDashboard = () => {
   const STOCH_K_PERIOD = 14;
   const STOCH_D_PERIOD = 3;
   const ADX_PERIOD = 14;
+  const ZSCORE_PERIOD = 30;
 
   // Dynamic RSI period based on time range
   const getRSIPeriod = (timeRange: string) => {
@@ -414,6 +415,64 @@ const TradingDashboard = () => {
     };
   };
 
+  // NEW Z-SCORE FUNCTIONS
+  const calculateZScore = (values, period) => {
+    if (values.length < period) return null;
+    
+    const recentValues = values.slice(-period);
+    const mean = recentValues.reduce((sum, val) => sum + val, 0) / period;
+    
+    const variance = recentValues.reduce((sum, val) => {
+      const diff = val - mean;
+      return sum + (diff * diff);
+    }, 0) / period;
+    
+    const stdDev = Math.sqrt(variance);
+    
+    if (stdDev === 0) return 0;
+    
+    const currentValue = values[values.length - 1];
+    const zScore = (currentValue - mean) / stdDev;
+    
+    return zScore;
+  };
+
+  const calculateZScoreArray = (values, period) => {
+    if (values.length < period) return [];
+    
+    const zScores = [];
+    
+    for (let i = period - 1; i < values.length; i++) {
+      const periodValues = values.slice(i - period + 1, i + 1);
+      const mean = periodValues.reduce((sum, val) => sum + val, 0) / period;
+      
+      const variance = periodValues.reduce((sum, val) => {
+        const diff = val - mean;
+        return sum + (diff * diff);
+      }, 0) / period;
+      
+      const stdDev = Math.sqrt(variance);
+      
+      if (stdDev === 0) {
+        zScores.push(0);
+      } else {
+        const zScore = (values[i] - mean) / stdDev;
+        zScores.push(zScore);
+      }
+    }
+    
+    return zScores;
+  };
+
+  const getZScoreSignal = (zScore) => {
+    if (zScore === null) return "Unknown";
+    if (zScore > 2) return "Extremely High";
+    if (zScore > 1) return "High";
+    if (zScore > -1) return "Normal";
+    if (zScore > -2) return "Low";
+    return "Extremely Low";
+  };
+
   const fetchBinanceData = async () => {
     setLoading(true);
     setError(null);
@@ -496,6 +555,7 @@ const TradingDashboard = () => {
     if (!rawData || rawData.length === 0) return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
 
     const prices = rawData.map(candle => parseFloat(candle[4]));
+    const volumes = rawData.map(candle => parseFloat(candle[5]));
     
     if (prices.length < LOOKBACK_DAYS) {
       return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
@@ -522,19 +582,37 @@ const TradingDashboard = () => {
     
     const macdResult = calculateMACD(prices, MACD_FAST, MACD_SLOW, MACD_SIGNAL);
     
-    // Calculate ATR and VWAP
     const currentATR = calculateATR(rawData, 14);
     const currentVWAP = calculateVWAP(rawData);
     
-    // Calculate Stochastic Oscillator
     const stochasticResult = calculateStochasticArray(rawData, STOCH_K_PERIOD, STOCH_D_PERIOD);
     
-    // Calculate ADX
     const adxResult = calculateADX(rawData, ADX_PERIOD);
+
+    // NEW Z-SCORE CALCULATIONS
+    const priceZScore = calculateZScore(prices, ZSCORE_PERIOD);
+    const volumeZScore = calculateZScore(volumes, ZSCORE_PERIOD);
+    
+    // Calculate RSI array for Z-score calculation
+    const rsiArray = [];
+    for (let i = RSI_PERIOD; i < prices.length; i++) {
+      const slicePrices = prices.slice(0, i + 1);
+      const rsiValue = calculateRSI(slicePrices, RSI_PERIOD);
+      if (rsiValue !== null) rsiArray.push(rsiValue);
+    }
+    const rsiZScore = rsiArray.length >= ZSCORE_PERIOD ? calculateZScore(rsiArray, ZSCORE_PERIOD) : null;
+    
+    // Calculate ATR array for Z-score calculation
+    const atrArray = [];
+    for (let i = 14; i < rawData.length; i++) {
+      const sliceCandles = rawData.slice(0, i + 1);
+      const atrValue = calculateATR(sliceCandles, 14);
+      if (atrValue !== null) atrArray.push(atrValue);
+    }
+    const atrZScore = atrArray.length >= ZSCORE_PERIOD ? calculateZScore(atrArray, ZSCORE_PERIOD) : null;
 
     const currentPrice = prices[prices.length - 1];
     
-    // Ensure SMAs exist before comparison
     const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
     const previousAbove = (yesterdaySMA50 && yesterdaySMA200) ? yesterdaySMA50 > yesterdaySMA200 : false;
     
@@ -558,7 +636,6 @@ const TradingDashboard = () => {
       rsiSignal = "Neutral";
     }
 
-    // Stochastic signal
     let stochSignal = "Neutral";
     if (stochasticResult) {
       if (stochasticResult.stochK < 20 && stochasticResult.stochD < 20) {
@@ -568,7 +645,6 @@ const TradingDashboard = () => {
       }
     }
 
-    // ADX trend strength signal
     let trendStrength = "Unknown";
     if (adxResult) {
       if (adxResult.adx > 25) {
@@ -580,7 +656,6 @@ const TradingDashboard = () => {
       }
     }
 
-    // Calculate bullish/bearish conditions
     const priceAboveSMA20 = currentPrice > currentSMAs.sma20;
     const priceAboveSMA50 = currentPrice > currentSMAs.sma50;
     const priceAboveSMA200 = currentPrice > currentSMAs.sma200;
@@ -604,15 +679,18 @@ const TradingDashboard = () => {
     if (rsiSignal === "Oversold") bullishScore++;
     if (priceNearBBLower) bullishScore++;
     if (macdResult && macdResult.crossover === "bullish_crossover") bullishScore++;
-    if (stochSignal === "Oversold") bullishScore++; // Add Stochastic to bullish score
+    if (stochSignal === "Oversold") bullishScore++;
 
     let marketSentiment;
     if (bullishScore >= 8) marketSentiment = "bullish";
     else if (bullishScore <= 3) marketSentiment = "bearish";
     else marketSentiment = "neutral";
 
-    // Prepare chart data with VWAP
+    // Prepare chart data with VWAP and Z-scores
     const vwapArray = calculateVWAPArray(rawData.slice(-60));
+    const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
+    const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
+    
     const chartData = rawData.slice(-60).map((candle, index) => {
       const timestamp = parseInt(candle[0]);
       const price = parseFloat(candle[4]);
@@ -672,7 +750,9 @@ const TradingDashboard = () => {
         vwap: vwapArray[index],
         stochK: stochArrayPoint ? stochArrayPoint.stochK : null,
         stochD: stochArrayPoint ? stochArrayPoint.stochD : null,
-        adx: adxPoint ? adxPoint.adx : null
+        adx: adxPoint ? adxPoint.adx : null,
+        priceZScore: priceZScoreArray.length > index ? priceZScoreArray[priceZScoreArray.length - 60 + index] : null,
+        volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - 60 + index] : null
       };
     });
 
@@ -707,10 +787,18 @@ const TradingDashboard = () => {
       priceAboveEMA20,
       priceAboveEMA50,
       priceAboveVWAP,
-      // Explicitly add sma50 and sma200 for TypeScript
       sma50: currentSMAs.sma50,
       sma200: currentSMAs.sma200,
-      rsiPeriod: RSI_PERIOD // Add RSI period to indicators
+      rsiPeriod: RSI_PERIOD,
+      // NEW Z-SCORE INDICATORS
+      priceZScore,
+      volumeZScore,
+      rsiZScore,
+      atrZScore,
+      priceZScoreSignal: getZScoreSignal(priceZScore),
+      volumeZScoreSignal: getZScoreSignal(volumeZScore),
+      rsiZScoreSignal: getZScoreSignal(rsiZScore),
+      atrZScoreSignal: getZScoreSignal(atrZScore)
     };
 
     // Cycle analysis
@@ -721,7 +809,6 @@ const TradingDashboard = () => {
       ? generateCycleProjections(chartData, cycles) 
       : [];
 
-    // Debug cycle analysis
     if (showCycleAnalysis && cycles.length > 0) {
       console.log('Cycle Analysis Results:', {
         cycleCount: cycles.length,
@@ -731,17 +818,15 @@ const TradingDashboard = () => {
       });
     }
 
-    // Integrate cycle projections with chart data
     let extendedChartData = [...chartData];
     
     if (showCycleAnalysis && cycleProjections.length > 0) {
-      // Group projections by timestamp
       const projectionsByTimestamp = cycleProjections.reduce((acc, proj) => {
         if (!acc[proj.timestamp]) {
           acc[proj.timestamp] = {
             date: new Date(proj.timestamp).toISOString().split('T')[0],
             timestamp: proj.timestamp,
-            price: null, // Future data point
+            price: null,
             volume: null,
             sma20: null,
             sma50: null,
@@ -763,7 +848,6 @@ const TradingDashboard = () => {
           };
         }
         
-        // Add cycle projection values (only if meaningful - not zero or very small)
         const basePrice = chartData[chartData.length - 1].price;
         if (proj.cycleId === 'cycle-0' && Math.abs(proj.value) > basePrice * 0.001) {
           acc[proj.timestamp].cycle0 = basePrice + proj.value;
@@ -778,13 +862,12 @@ const TradingDashboard = () => {
         return acc;
       }, {});
       
-      // Add projection data points to chart
       const projectionDataPoints = Object.values(projectionsByTimestamp) as any[];
       extendedChartData = [...chartData, ...projectionDataPoints];
     }
 
     return { chartData: extendedChartData, indicators, cycles, cycleStrength, cycleProjections };
-  }, [rawData, showCycleAnalysis, timeRange]); // Added timeRange to dependencies
+  }, [rawData, showCycleAnalysis, timeRange]);
 
   useEffect(() => {
     fetchBinanceData();
@@ -885,6 +968,12 @@ const TradingDashboard = () => {
       shortDescription: "Volatility bands showing price channels",
       detailedExplanation: "Bollinger Bands consist of a middle line (20 SMA) and two outer bands (±2 standard deviations). They expand and contract based on market volatility, helping identify overbought/oversold conditions and potential breakouts.",
       tradingTip: "Prices tend to bounce between the bands. When bands squeeze together, it often precedes a significant price move."
+    },
+    {
+      title: "Z-Score Analysis",
+      shortDescription: "Statistical measure of how far a value deviates from the mean",
+      detailedExplanation: "Z-Score measures how many standard deviations a current value is from the historical average. Values above +2 or below -2 indicate statistically extreme conditions that may signal reversals or continuation patterns.",
+      tradingTip: "Use Z-scores to identify when prices, volume, or indicators are at extreme levels. High volume Z-scores confirm price moves, while extreme price Z-scores may signal reversal opportunities."
     }
   ];
 
@@ -1015,8 +1104,8 @@ const TradingDashboard = () => {
           </CollapsibleContent>
         </Collapsible>
         
-        {/* Key Metrics Grid - Updated to include Stochastic and ADX */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {/* Key Metrics Grid - Updated with Z-Score cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <Card className="p-4 shadow-card border-border">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-primary" />
@@ -1106,6 +1195,65 @@ const TradingDashboard = () => {
                 indicators.trendStrength === 'Moderate Trend' ? 'text-neutral' : 'text-muted-foreground'
               }`}>
                 {indicators.trendStrength}
+              </span>
+            </div>
+          </Card>
+
+          {/* NEW Z-SCORE CARDS */}
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="w-4 h-4 text-chart-1" />
+              <UITooltip>
+                <TooltipTrigger>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Price Z-Score</h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Measures how far current price deviates from 30-day average. Values above +2 or below -2 indicate extreme conditions.</p>
+                </TooltipContent>
+              </UITooltip>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className={`text-xl font-bold ${
+                Math.abs(indicators.priceZScore || 0) > 2 ? 'text-bearish' : 
+                Math.abs(indicators.priceZScore || 0) > 1 ? 'text-neutral' : 'text-bullish'
+              }`}>
+                {indicators.priceZScore ? indicators.priceZScore.toFixed(2) : 'N/A'}
+              </p>
+              <span className={`text-sm font-medium ${
+                Math.abs(indicators.priceZScore || 0) > 2 ? 'text-bearish' : 
+                Math.abs(indicators.priceZScore || 0) > 1 ? 'text-neutral' : 'text-bullish'
+              }`}>
+                {indicators.priceZScoreSignal}
+              </span>
+            </div>
+          </Card>
+
+          <Card className="p-4 shadow-card border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <StatisticsIcon className="w-4 h-4 text-chart-2" />
+              <UITooltip>
+                <TooltipTrigger>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Volume Z-Score</h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Measures how far current volume deviates from 30-day average. High values indicate strong interest/breakouts.</p>
+                </TooltipContent>
+              </UITooltip>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className={`text-xl font-bold ${
+                (indicators.volumeZScore || 0) > 2 ? 'text-bullish' : 
+                (indicators.volumeZScore || 0) > 1 ? 'text-neutral' : 
+                (indicators.volumeZScore || 0) < -1 ? 'text-bearish' : 'text-muted-foreground'
+              }`}>
+                {indicators.volumeZScore ? indicators.volumeZScore.toFixed(2) : 'N/A'}
+              </p>
+              <span className={`text-sm font-medium ${
+                (indicators.volumeZScore || 0) > 2 ? 'text-bullish' : 
+                (indicators.volumeZScore || 0) > 1 ? 'text-neutral' : 
+                (indicators.volumeZScore || 0) < -1 ? 'text-bearish' : 'text-muted-foreground'
+              }`}>
+                {indicators.volumeZScoreSignal}
               </span>
             </div>
           </Card>
@@ -1241,9 +1389,9 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
-        {/* Indicator Charts - Updated to include Stochastic and ADX */}
+        {/* Indicator Charts - Updated to include Z-Score charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* RSI Chart - Updated with dynamic title and period */}
+          {/* RSI Chart */}
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
               <h2 className="text-xl font-semibold text-foreground">RSI ({indicators.rsiPeriod})</h2>
@@ -1339,6 +1487,79 @@ const TradingDashboard = () => {
             </div>
           </Card>
 
+          {/* NEW Price Z-Score Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Price Z-Score (30)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[-3, 3]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'Price Z-Score']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={2} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Extremely High" />
+                  <ReferenceLine y={1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="High" />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" label="Average" />
+                  <ReferenceLine y={-1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="Low" />
+                  <ReferenceLine y={-2} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Extremely Low" />
+                  <Line type="monotone" dataKey="priceZScore" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Price Z-Score" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* NEW Volume Z-Score Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Volume Z-Score (30)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[-3, 4]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'Volume Z-Score']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={2} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Strong Interest" />
+                  <ReferenceLine y={1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="Above Average" />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" label="Average" />
+                  <ReferenceLine y={-1} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Low Activity" />
+                  <Line type="monotone" dataKey="volumeZScore" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Volume Z-Score" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
           {/* Stochastic Chart */}
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -1410,7 +1631,7 @@ const TradingDashboard = () => {
           </Card>
         </div>
 
-        {/* Technical Indicators Summary - Keep existing code */}
+        {/* Technical Indicators Summary - Updated with Statistical Analysis section */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Technical Indicators Summary</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1504,26 +1725,36 @@ const TradingDashboard = () => {
               </div>
             </div>
 
-            {/* Volatility & Volume */}
+            {/* NEW Statistical Analysis Section */}
             <div>
-              <h3 className="text-lg font-semibold mb-3 text-chart-1">Volatility & Volume</h3>
+              <h3 className="text-lg font-semibold mb-3 text-chart-1">Statistical Analysis</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>ATR (14):</span>
-                  <span className="font-medium">{indicators.atr ? `${indicators.atr.toFixed(2)}` : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>VWAP:</span>
-                  <span className="font-medium">{formatPrice(indicators.vwap)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>BB Position:</span>
+                  <span>Price Z-Score:</span>
                   <span className={`font-medium ${
-                    indicators.bbUpper && indicators.currentPrice > indicators.bbUpper ? 'text-bearish' : 
-                    indicators.bbLower && indicators.currentPrice < indicators.bbLower ? 'text-bullish' : 'text-neutral'
+                    Math.abs(indicators.priceZScore || 0) > 2 ? 'text-bearish' : 
+                    Math.abs(indicators.priceZScore || 0) > 1 ? 'text-neutral' : 'text-bullish'
                   }`}>
-                    {indicators.bbUpper && indicators.currentPrice > indicators.bbUpper ? 'Above Upper' :
-                     indicators.bbLower && indicators.currentPrice < indicators.bbLower ? 'Below Lower' : 'In Range'}
+                    {indicators.priceZScore ? indicators.priceZScore.toFixed(2) : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Volume Z-Score:</span>
+                  <span className={`font-medium ${
+                    (indicators.volumeZScore || 0) > 2 ? 'text-bullish' : 
+                    (indicators.volumeZScore || 0) > 1 ? 'text-neutral' : 
+                    (indicators.volumeZScore || 0) < -1 ? 'text-bearish' : 'text-muted-foreground'
+                  }`}>
+                    {indicators.volumeZScore ? indicators.volumeZScore.toFixed(2) : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Statistical Signal:</span>
+                  <span className={`font-medium text-sm ${
+                    Math.abs(indicators.priceZScore || 0) > 2 ? 'text-bearish' : 'text-muted-foreground'
+                  }`}>
+                    {Math.abs(indicators.priceZScore || 0) > 2 ? 'Extreme' : 
+                     Math.abs(indicators.priceZScore || 0) > 1 ? 'Notable' : 'Normal'}
                   </span>
                 </div>
               </div>
