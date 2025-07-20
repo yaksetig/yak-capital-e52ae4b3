@@ -658,9 +658,9 @@ const TradingDashboard = () => {
                 <div>
                   <h4 className="font-medium">Z-Score Interpretation</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• |Z| > 2.5: Extreme deviation (strong reversal signal)</li>
-                    <li>• |Z| > 2.0: Significant deviation (moderate signal)</li>
-                    <li>• |Z| > 1.0: Minor deviation</li>
+                    <li>• |Z| {'>'}= 2.5: Extreme deviation (strong reversal signal)</li>
+                    <li>• |Z| {'>'}= 2.0: Significant deviation (moderate signal)</li>
+                    <li>• |Z| {'>'}= 1.0: Minor deviation</li>
                     <li>• |Z| ≤ 1.0: Normal range</li>
                   </ul>
                 </div>
