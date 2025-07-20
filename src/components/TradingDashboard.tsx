@@ -567,6 +567,17 @@ const TradingDashboard = () => {
       }
     }
 
+    // Calculate bullish/bearish conditions
+    const priceAboveSMA20 = currentPrice > currentSMAs.sma20;
+    const priceAboveSMA50 = currentPrice > currentSMAs.sma50;
+    const priceAboveSMA200 = currentPrice > currentSMAs.sma200;
+    const priceAboveEMA20 = currentPrice > currentEMAs.ema20;
+    const priceAboveEMA50 = currentPrice > currentEMAs.ema50;
+    const priceAboveVWAP = currentPrice > currentVWAP;
+    const sma20AboveSMA50 = currentSMAs.sma20 > currentSMAs.sma50;
+    const sma50AboveSMA200 = currentSMAs.sma50 > currentSMAs.sma200;
+    const priceNearBBLower = currentPrice < (bbLower + (bbMiddle - bbLower) * 0.1);
+
     let bullishScore = 0;
     if (priceAboveSMA20) bullishScore++;
     if (priceAboveSMA50) bullishScore++;
