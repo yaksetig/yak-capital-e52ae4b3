@@ -508,7 +508,10 @@ const TradingDashboard = () => {
       priceAboveSMA200,
       priceAboveEMA20,
       priceAboveEMA50,
-      priceAboveVWAP
+      priceAboveVWAP,
+      // Explicitly add sma50 and sma200 for TypeScript
+      sma50: currentSMAs.sma50,
+      sma200: currentSMAs.sma200
     };
 
     // Cycle analysis
