@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -414,6 +415,39 @@ const TradingDashboard = () => {
     return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const formatPriceShort = (value) => {
+    if (value === null || value === undefined || isNaN(value)) return '';
+    
+    const num = Math.abs(value);
+    
+    if (num < 1000) {
+      // For prices under $1000, show full amount with appropriate decimals
+      if (num < 1) {
+        return `$${value.toFixed(4)}`;
+      } else if (num < 10) {
+        return `$${value.toFixed(2)}`;
+      } else {
+        return `$${Math.round(value)}`;
+      }
+    } else if (num < 1000000) {
+      // For prices $1k - $999k, show with "k"
+      const kValue = value / 1000;
+      if (kValue < 10) {
+        return `$${kValue.toFixed(1)}k`;
+      } else {
+        return `$${Math.round(kValue)}k`;
+      }
+    } else {
+      // For prices >= $1M, show with "M"
+      const mValue = value / 1000000;
+      if (mValue < 10) {
+        return `$${mValue.toFixed(1)}M`;
+      } else {
+        return `$${Math.round(mValue)}M`;
+      }
+    }
+  };
+
   const formatDate = (value) => {
     return new Date(value).toLocaleDateString();
   };
@@ -682,7 +716,7 @@ const TradingDashboard = () => {
                 />
                 <YAxis 
                   domain={yAxisDomain}
-                  tickFormatter={formatPrice}
+                  tickFormatter={formatPriceShort}
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <Tooltip 
