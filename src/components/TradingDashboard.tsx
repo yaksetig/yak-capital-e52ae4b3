@@ -6,6 +6,7 @@ import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen } from 'lucide-
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import InfoCard from './InfoCard';
 import TimeRangeSelector from './TimeRangeSelector';
+import ChartControls from './ChartControls';
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -15,6 +16,21 @@ const TradingDashboard = () => {
   const [interval, setInterval] = useState('1d');
   const [timeRange, setTimeRange] = useState('60');
   const [showEducation, setShowEducation] = useState(false);
+
+  // Chart zoom and display controls
+  const [yAxisPadding, setYAxisPadding] = useState(10);
+  const [autoFit, setAutoFit] = useState(true);
+  const [manualPriceRange, setManualPriceRange] = useState({ min: 0, max: 0 });
+  const [chartHeight, setChartHeight] = useState(400);
+  const [visibleLines, setVisibleLines] = useState({
+    sma20: true,
+    sma50: true,
+    ema20: true,
+    ema50: true,
+    bbUpper: true,
+    bbMiddle: true,
+    bbLower: true,
+  });
 
   // Configuration
   const LOOKBACK_DAYS = 201;
@@ -182,6 +198,56 @@ const TradingDashboard = () => {
     
     const daysToShow = parseInt(timeRange);
     return chartData.slice(-daysToShow);
+  };
+
+  // Calculate dynamic Y-axis domain
+  const calculateYAxisDomain = (data, padding = 10) => {
+    if (!data || data.length === 0) return ['auto', 'auto'];
+    
+    const prices = data.map(d => d.price).filter(p => p != null);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min;
+    const paddingAmount = (range * padding) / 100;
+    
+    return [min - paddingAmount, max + paddingAmount];
+  };
+
+  // Chart control handlers
+  const handleYAxisPaddingChange = (padding) => {
+    setYAxisPadding(padding);
+  };
+
+  const handleAutoFitChange = (enabled) => {
+    setAutoFit(enabled);
+  };
+
+  const handlePriceRangeChange = (min, max) => {
+    setManualPriceRange({ min, max });
+  };
+
+  const handleLineVisibilityChange = (line, visible) => {
+    setVisibleLines(prev => ({ ...prev, [line]: visible }));
+  };
+
+  const handleZoomIn = () => {
+    setYAxisPadding(Math.max(0, yAxisPadding - 5));
+  };
+
+  const handleZoomOut = () => {
+    setYAxisPadding(Math.min(25, yAxisPadding + 5));
+  };
+
+  const handleResetZoom = () => {
+    setYAxisPadding(10);
+    setAutoFit(true);
+    setManualPriceRange({ min: 0, max: 0 });
+  };
+
+  const handleFocusRecent = () => {
+    setTimeRange('7');
+    setYAxisPadding(5);
+    setAutoFit(true);
   };
 
   // Process raw data and calculate indicators
@@ -430,6 +496,9 @@ const TradingDashboard = () => {
   }
 
   const filteredChartData = getFilteredChartData(chartData);
+  const yAxisDomain = autoFit 
+    ? calculateYAxisDomain(filteredChartData, yAxisPadding)
+    : [manualPriceRange.min || 'auto', manualPriceRange.max || 'auto'];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -572,6 +641,25 @@ const TradingDashboard = () => {
           </Card>
         </div>
 
+        {/* Chart Controls */}
+        <ChartControls
+          yAxisPadding={yAxisPadding}
+          onYAxisPaddingChange={handleYAxisPaddingChange}
+          autoFit={autoFit}
+          onAutoFitChange={handleAutoFitChange}
+          minPrice={manualPriceRange.min}
+          maxPrice={manualPriceRange.max}
+          onPriceRangeChange={handlePriceRangeChange}
+          chartHeight={chartHeight}
+          onChartHeightChange={setChartHeight}
+          visibleLines={visibleLines}
+          onLineVisibilityChange={handleLineVisibilityChange}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetZoom={handleResetZoom}
+          onFocusRecent={handleFocusRecent}
+        />
+
         {/* Main Price Chart */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -581,7 +669,7 @@ const TradingDashboard = () => {
               onRangeChange={setTimeRange}
             />
           </div>
-          <div className="h-96 bg-chart-bg rounded-lg p-4">
+          <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
@@ -591,6 +679,7 @@ const TradingDashboard = () => {
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis 
+                  domain={yAxisDomain}
                   tickFormatter={formatPrice}
                   stroke="hsl(var(--muted-foreground))"
                 />
@@ -606,14 +695,14 @@ const TradingDashboard = () => {
                 />
                 <Legend />
                 
-                <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} />
-                <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} />
-                <Line type="monotone" dataKey="bbMiddle" stroke="hsl(var(--muted-foreground))" strokeWidth={1} name="BB Middle" dot={false} />
+                {visibleLines.bbUpper && <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} />}
+                {visibleLines.bbLower && <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} />}
+                {visibleLines.bbMiddle && <Line type="monotone" dataKey="bbMiddle" stroke="hsl(var(--muted-foreground))" strokeWidth={1} name="BB Middle" dot={false} />}
                 
-                <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} />
-                <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} />
-                <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />
-                <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />
+                {visibleLines.sma20 && <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} />}
+                {visibleLines.sma50 && <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} />}
+                {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />}
+                {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />}
                 
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />
               </LineChart>
@@ -633,7 +722,7 @@ const TradingDashboard = () => {
                 className="scale-90"
               />
             </div>
-            <div className="h-64 bg-chart-bg rounded-lg p-4">
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
@@ -668,7 +757,7 @@ const TradingDashboard = () => {
                 className="scale-90"
               />
             </div>
-            <div className="h-64 bg-chart-bg rounded-lg p-4">
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
