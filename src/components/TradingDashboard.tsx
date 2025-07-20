@@ -1631,6 +1631,89 @@ const TradingDashboard = () => {
           </Card>
         </div>
 
+        {/* Z-Score Analysis Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Price Z-Score Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Price Z-Score (30)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[-3, 3]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'Price Z-Score']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={2} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Extremely High" />
+                  <ReferenceLine y={1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="High" />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" label="Average" />
+                  <ReferenceLine y={-1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="Low" />
+                  <ReferenceLine y={-2} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Extremely Low" />
+                  <Line type="monotone" dataKey="priceZScore" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Price Z-Score" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Price Z-Score shows how far current price deviates from its 30-day average. Values above +2 suggest overbought conditions.
+            </p>
+          </Card>
+
+          {/* Volume Z-Score Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Volume Z-Score (30)</h2>
+              <TimeRangeSelector 
+                selectedRange={timeRange}
+                onRangeChange={setTimeRange}
+                className="scale-90"
+              />
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[-3, 3]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'Volume Z-Score']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={2} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Extremely High" />
+                  <ReferenceLine y={1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="High" />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" label="Average" />
+                  <ReferenceLine y={-1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="Low" />
+                  <ReferenceLine y={-2} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Extremely Low" />
+                  <Line type="monotone" dataKey="volumeZScore" stroke="hsl(var(--chart-3))" strokeWidth={2} name="Volume Z-Score" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Volume Z-Score indicates unusual trading activity. High values suggest strong market interest or potential breakouts.
+            </p>
+          </Card>
+        </div>
+
         {/* Technical Indicators Summary - Updated with Statistical Analysis section */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Technical Indicators Summary</h2>
