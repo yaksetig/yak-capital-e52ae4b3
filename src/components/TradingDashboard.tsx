@@ -928,7 +928,7 @@ const TradingDashboard = () => {
           </div>
           <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredChartData} isAnimationActive={false}>
+              <LineChart data={filteredChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                 <XAxis 
                   dataKey="date" 
@@ -952,62 +952,65 @@ const TradingDashboard = () => {
                 />
                 <Legend />
                 
-                {visibleLines.bbUpper && <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} />}
-                {visibleLines.bbLower && <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} />}
-                
-                {visibleLines.sma20 && <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} />}
-                {visibleLines.sma50 && <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} />}
-                {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} />}
-                {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} />}
-                
-                {/* VWAP Line with bright, visible color */}
-                {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} />}
-                
-                {visibleLines.price && <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} />}
+                 {visibleLines.bbUpper && <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} isAnimationActive={false} />}
+                 {visibleLines.bbLower && <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} isAnimationActive={false} />}
+                 
+                 {visibleLines.sma20 && <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} isAnimationActive={false} />}
+                 {visibleLines.sma50 && <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} isAnimationActive={false} />}
+                 {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} isAnimationActive={false} />}
+                 {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} isAnimationActive={false} />}
+                 
+                 {/* VWAP Line with bright, visible color */}
+                 {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} isAnimationActive={false} />}
+                 
+                 {visibleLines.price && <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} isAnimationActive={false} />}
                 
                 {/* Cycle Projection Lines with click handlers */}
                 {showCycleAnalysis && (
                   <>
                     {chartData.some(d => (d as any).cycle0) && (
-                      <Line 
-                        type="monotone" 
-                        dataKey="cycle0" 
-                        stroke="rgba(255, 165, 0, 0.7)" 
-                        strokeWidth={2} 
-                        strokeDasharray="8 8" 
-                        name="Cycle 1 Projection" 
-                        dot={false}
-                        connectNulls={false}
-                        onClick={() => setSelectedCycleModal('cycle-1')}
-                        style={{ cursor: 'pointer' }}
-                      />
+                       <Line 
+                         type="monotone" 
+                         dataKey="cycle0" 
+                         stroke="rgba(255, 165, 0, 0.7)" 
+                         strokeWidth={2} 
+                         strokeDasharray="8 8" 
+                         name="Cycle 1 Projection" 
+                         dot={false}
+                         connectNulls={false}
+                         onClick={() => setSelectedCycleModal('cycle-1')}
+                         style={{ cursor: 'pointer' }}
+                         isAnimationActive={false}
+                       />
                     )}
                     {chartData.some(d => (d as any).cycle1) && (
-                      <Line 
-                        type="monotone" 
-                        dataKey="cycle1" 
-                        stroke="rgba(75, 192, 192, 0.7)" 
-                        strokeWidth={2} 
-                        strokeDasharray="8 8" 
-                        name="Cycle 2 Projection" 
-                        dot={false}
-                        connectNulls={false}
-                        onClick={() => setSelectedCycleModal('cycle-2')}
-                        style={{ cursor: 'pointer' }}
-                      />
+                       <Line 
+                         type="monotone" 
+                         dataKey="cycle1" 
+                         stroke="rgba(75, 192, 192, 0.7)" 
+                         strokeWidth={2} 
+                         strokeDasharray="8 8" 
+                         name="Cycle 2 Projection" 
+                         dot={false}
+                         connectNulls={false}
+                         onClick={() => setSelectedCycleModal('cycle-2')}
+                         style={{ cursor: 'pointer' }}
+                         isAnimationActive={false}
+                       />
                     )}
                     {chartData.some(d => (d as any).cycle2) && (
-                      <Line 
-                        type="monotone" 
-                        dataKey="cycle2" 
-                        stroke="rgba(153, 102, 255, 0.7)" 
-                        strokeWidth={2} 
-                        strokeDasharray="8 8" 
-                        name="Cycle 3 Projection" 
-                        dot={false}
-                        connectNulls={false}
-                        onClick={() => setSelectedCycleModal('cycle-3')}
-                        style={{ cursor: 'pointer' }}
+                       <Line 
+                         type="monotone" 
+                         dataKey="cycle2" 
+                         stroke="rgba(153, 102, 255, 0.7)" 
+                         strokeWidth={2} 
+                         strokeDasharray="8 8" 
+                         name="Cycle 3 Projection" 
+                         dot={false}
+                         connectNulls={false}
+                         onClick={() => setSelectedCycleModal('cycle-3')}
+                         style={{ cursor: 'pointer' }}
+                         isAnimationActive={false}
                       />
                     )}
                   </>
@@ -1031,7 +1034,7 @@ const TradingDashboard = () => {
             </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredChartData} isAnimationActive={false}>
+                <LineChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
@@ -1048,7 +1051,7 @@ const TradingDashboard = () => {
                   <ReferenceLine y={70} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
                   <ReferenceLine y={30} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
                   <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-                  <Line type="monotone" dataKey="rsi" stroke="hsl(var(--accent))" strokeWidth={2} name="RSI" dot={false} />
+                  <Line type="monotone" dataKey="rsi" stroke="hsl(var(--accent))" strokeWidth={2} name="RSI" dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -1066,7 +1069,7 @@ const TradingDashboard = () => {
             </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={filteredChartData} isAnimationActive={false}>
+                <ComposedChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -1081,9 +1084,9 @@ const TradingDashboard = () => {
                     }}
                   />
                   <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-                  <Line type="monotone" dataKey="macd" stroke="hsl(var(--primary))" strokeWidth={2} name="MACD" dot={false} />
-                  <Line type="monotone" dataKey="macdSignal" stroke="hsl(var(--bearish))" strokeWidth={2} name="Signal" dot={false} />
-                  <Bar dataKey="macdHistogram" fill="hsl(var(--bullish))" name="Histogram" />
+                   <Line type="monotone" dataKey="macd" stroke="hsl(var(--primary))" strokeWidth={2} name="MACD" dot={false} isAnimationActive={false} />
+                   <Line type="monotone" dataKey="macdSignal" stroke="hsl(var(--bearish))" strokeWidth={2} name="Signal" dot={false} isAnimationActive={false} />
+                   <Bar dataKey="macdHistogram" fill="hsl(var(--bullish))" name="Histogram" isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
