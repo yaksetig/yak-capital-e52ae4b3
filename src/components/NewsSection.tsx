@@ -9,7 +9,7 @@ interface NewsSectionProps {
 }
 
 const NewsSection: React.FC<NewsSectionProps> = ({ symbol }) => {
-  const ticker = symbol.replace('USDT', ''); // Convert BTCUSDT to BTC
+  const ticker = symbol?.replace('USDT', '') || 'BTC'; // Convert BTCUSDT to BTC, with fallback
   const { data: newsData, isLoading, error } = useNewsData(ticker);
 
   const getSentimentColor = (sentiment: string) => {
