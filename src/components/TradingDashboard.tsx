@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import MainChart from '@/components/MainChart';
+
 import MACDChart from '@/components/MACDChart';
 import StochasticChart from '@/components/StochasticChart';
 import CycleAnalysisPanel from '@/components/CycleAnalysisPanel';
@@ -58,20 +58,14 @@ const TradingDashboard = () => {
         <Card className="col-span-2">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">
-              Stock Price Chart
+              Trading Dashboard
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <p>Loading data...</p>
             ) : (
-              <MainChart
-                data={chartData}
-                height={400}
-                timeRange={timeRange}
-                onTimeRangeChange={setTimeRange}
-                formatDate={formatDate}
-              />
+              <p>Chart data loaded with {chartData.length} data points</p>
             )}
           </CardContent>
         </Card>
@@ -93,8 +87,6 @@ const TradingDashboard = () => {
           chartData={chartData}
           chartHeight={chartHeight}
           formatDate={formatDate}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
         />
 
         {/* Stochastic Oscillator */}
@@ -102,16 +94,18 @@ const TradingDashboard = () => {
           chartData={chartData}
           chartHeight={chartHeight}
           formatDate={formatDate}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
         />
 
         {/* Cycle Analysis Panel */}
-        <CycleAnalysisPanel chartData={chartData} />
+        <CycleAnalysisPanel
+          cycles={[]}
+          cycleStrength={0}
+          isVisible={true}
+        />
       </div>
 
       {/* News Section */}
-      <NewsSection />
+      <NewsSection symbol="BTC" />
     </div>
   );
 };
