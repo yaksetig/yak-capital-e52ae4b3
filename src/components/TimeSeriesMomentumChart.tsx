@@ -1,5 +1,5 @@
 import React from 'react';
-import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { Card } from '@/components/ui/card';
 import TimeRangeSelector from './TimeRangeSelector';
 
@@ -60,6 +60,30 @@ const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chart
               }}
             />
             <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={3} name="BTC Price" dot={false} isAnimationActive={false} />
+            
+            {/* First point marker */}
+            {chartData.length > 0 && (
+              <ReferenceDot 
+                x={chartData[0].date} 
+                y={chartData[0].price} 
+                r={6} 
+                fill="#ef4444" 
+                stroke="#dc2626" 
+                strokeWidth={2}
+              />
+            )}
+            
+            {/* Last point marker */}
+            {chartData.length > 1 && (
+              <ReferenceDot 
+                x={chartData[chartData.length - 1].date} 
+                y={chartData[chartData.length - 1].price} 
+                r={6} 
+                fill="#ef4444" 
+                stroke="#dc2626" 
+                strokeWidth={2}
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
