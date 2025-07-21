@@ -561,7 +561,12 @@ const TradingDashboard = () => {
 
   // Helper function to correlate M2 data with price data
   const correlateM2WithPriceData = (priceData: any[], m2Data: any[]) => {
-    if (!m2Data || m2Data.length === 0) return priceData;
+    if (!m2Data || m2Data.length === 0) {
+      console.log('No M2 data available for correlation');
+      return priceData;
+    }
+
+    console.log('Correlating M2 data:', { m2DataLength: m2Data.length, priceDataLength: priceData.length });
 
     // Create a map of M2 data by date for efficient lookup
     const m2Map = new Map();
@@ -570,14 +575,21 @@ const TradingDashboard = () => {
       m2Map.set(date, item.m2Supply);
     });
 
+    console.log('M2 data map size:', m2Map.size);
+
     // Add M2 data to price data where dates match
-    return priceData.map(item => {
+    const correlatedData = priceData.map(item => {
       const m2Supply = m2Map.get(item.date);
       return {
         ...item,
         m2Supply: m2Supply || null
       };
     });
+
+    const m2MatchCount = correlatedData.filter(item => item.m2Supply !== null).length;
+    console.log('M2 correlation results:', { totalPricePoints: priceData.length, m2Matches: m2MatchCount });
+
+    return correlatedData;
   };
 
   // Helper function to format M2 supply values
@@ -1537,8 +1549,8 @@ const TradingDashboard = () => {
                 />
                 <Tooltip 
                   formatter={(value, name) => {
-                    if (name === 'Price') return [formatPrice(value), name];
-                    if (name === 'M2 Supply') return [formatM2Supply(value), name];
+                    if (name === 'Price') return [formatPrice(Number(value)), name];
+                    if (name === 'M2 Supply') return [formatM2Supply(Number(value)), name];
                     return [value, name];
                   }}
                   labelFormatter={(label) => `Date: ${formatDate(label)}`}
