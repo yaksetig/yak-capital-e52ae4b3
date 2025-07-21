@@ -193,6 +193,28 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in fetch-news function:', error)
     
+    // If API fails, try to return any cached data we have (even if older than 6 hours)
+    try {
+      const { data: fallbackNews, error: fallbackError } = await supabase
+        .from('news_articles')
+        .select('*')
+        .eq('ticker', ticker.toUpperCase())
+        .order('time_published', { ascending: false })
+        .limit(50)
+
+      if (!fallbackError && fallbackNews && fallbackNews.length > 0) {
+        console.log(`Returning ${fallbackNews.length} fallback cached articles for ${ticker}`)
+        return new Response(
+          JSON.stringify(fallbackNews),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    } catch (fallbackErr) {
+      console.error('Fallback cache query also failed:', fallbackErr)
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: 'Failed to fetch news', 

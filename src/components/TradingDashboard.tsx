@@ -2062,6 +2062,7 @@ const TradingDashboard = () => {
 
         {/* News Section */}
         <NewsSection symbol={symbol} />
+        <NewsSection symbol={symbol} />
           </>
         ) : (
           <>
@@ -2211,8 +2212,6 @@ const TradingDashboard = () => {
           </>
         )}
 
-        {/* News Section */}
-        <NewsSection symbol={symbol} />
 
         {/* Cycle Projection Modal */}
         <CycleProjectionModal
