@@ -91,7 +91,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
         {/* Y-Axis Controls */}
         <div className="flex gap-2 items-center">
           <label className="text-sm font-medium">Y-Axis Padding:</label>
-          <Select value={(yAxisPadding || 0).toString()} onValueChange={(value) => onYAxisPaddingChange(Number(value))}>
+          <Select value={yAxisPadding.toString()} onValueChange={(value) => onYAxisPaddingChange(Number(value))}>
             <SelectTrigger className="w-20">
               <SelectValue />
             </SelectTrigger>
@@ -118,7 +118,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
         {/* Chart Height */}
         <div className="flex gap-2 items-center">
           <label className="text-sm font-medium">Height:</label>
-          <Select value={(chartHeight || 400).toString()} onValueChange={(value) => onChartHeightChange(Number(value))}>
+          <Select value={chartHeight.toString()} onValueChange={(value) => onChartHeightChange(Number(value))}>
             <SelectTrigger className="w-24">
               <SelectValue />
             </SelectTrigger>
