@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot, ExternalLink, AlertCircle } from 'lucide-react';
 import AIRecommendationSection from './AIRecommendationSection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -30,7 +30,7 @@ const TradingDashboard = () => {
   const [timeRange, setTimeRange] = useState('60');
   const [showEducation, setShowEducation] = useState(false);
   const [selectedCycleModal, setSelectedCycleModal] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'technical' | 'ai-trade'>('technical');
+  const [currentView, setCurrentView] = useState<'technical' | 'ai-trade' | 'news-sentiment'>('technical');
 
   // Chart zoom and display controls
   const [yAxisPadding, setYAxisPadding] = useState(10);
@@ -1498,7 +1498,7 @@ const TradingDashboard = () => {
               variant={currentView === 'technical' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('technical')}
-              className={currentView === 'technical' ? 'bg-background shadow-sm' : ''}
+              className={currentView === 'technical' ? 'bg-background shadow-sm text-foreground' : 'text-foreground hover:text-foreground'}
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Technical Analysis
@@ -1507,10 +1507,19 @@ const TradingDashboard = () => {
               variant={currentView === 'ai-trade' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('ai-trade')}
-              className={currentView === 'ai-trade' ? 'bg-background shadow-sm' : ''}
+              className={currentView === 'ai-trade' ? 'bg-background shadow-sm text-foreground' : 'text-foreground hover:text-foreground'}
             >
               <Bot className="h-4 w-4 mr-2" />
               AI Trade of the Day
+            </Button>
+            <Button
+              variant={currentView === 'news-sentiment' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('news-sentiment')}
+              className={currentView === 'news-sentiment' ? 'bg-background shadow-sm text-foreground' : 'text-foreground hover:text-foreground'}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              News & Market Sentiment
             </Button>
           </div>
         </div>
@@ -2060,10 +2069,8 @@ const TradingDashboard = () => {
         </Card>
 
 
-        {/* News Section */}
-        <NewsSection symbol={symbol} />
           </>
-        ) : (
+        ) : currentView === 'ai-trade' ? (
           <>
         {/* AI Trade of the Day View */}
         <div className="space-y-6">
@@ -2121,6 +2128,79 @@ const TradingDashboard = () => {
             </div>
           </Card>
         </div>
+          </>
+        ) : (
+          <>
+          {/* News & Market Sentiment View */}
+          <div className="space-y-6">
+            {/* News Section */}
+            <NewsSection symbol={symbol} />
+            
+            {/* Fear & Greed Index Card */}
+            <Card className="p-6 shadow-card border-border">
+              <div className="flex items-center gap-2 mb-6">
+                {fearGreedData ? (
+                  (() => {
+                    const IconComponent = getFearGreedIcon(fearGreedData.value_classification);
+                    return <IconComponent className="w-5 h-5 text-primary" />;
+                  })()
+                ) : (
+                  <Meh className="w-5 h-5 text-muted-foreground" />
+                )}
+                <h2 className="text-xl font-semibold text-foreground">Fear & Greed Index</h2>
+              </div>
+              
+              {fearGreedLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading market sentiment...</p>
+                </div>
+              ) : fearGreedError ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-4" />
+                  <p className="text-destructive mb-2">Failed to load Fear & Greed Index</p>
+                  <p className="text-sm text-muted-foreground">{typeof fearGreedError === 'string' ? fearGreedError : 'Unknown error'}</p>
+                </div>
+              ) : fearGreedData ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-3xl font-bold text-foreground">
+                        {fearGreedData.value}
+                      </p>
+                      <p className={`text-lg font-medium ${
+                        fearGreedData.value_classification === 'Extreme Fear' ? 'text-red-500' :
+                        fearGreedData.value_classification === 'Fear' ? 'text-orange-500' :
+                        fearGreedData.value_classification === 'Greed' ? 'text-green-500' :
+                        fearGreedData.value_classification === 'Extreme Greed' ? 'text-emerald-500' :
+                        'text-neutral'
+                      }`}>
+                        {fearGreedData.value_classification}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Last Updated</p>
+                      <p className="text-sm font-medium">{fearGreedData.timestamp ? new Date(Number(fearGreedData.timestamp) * 1000).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-muted rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">Understanding the Index</h4>
+                    <p className="text-sm text-muted-foreground">
+                      The Fear & Greed Index measures market sentiment on a scale of 0-100. 
+                      Extreme Fear (0-24) often indicates buying opportunities, while Extreme Greed (75-100) 
+                      may suggest caution as markets could be overvalued.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Meh className="w-8 h-8 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No Fear & Greed data available</p>
+                </div>
+              )}
+            </Card>
+          </div>
           </>
         )}
 
