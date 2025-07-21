@@ -14,7 +14,7 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-2">Moving Average Convergence Divergence (MACD)</h2>
-          <p className="text-sm text-muted-foreground max-w-2xl">
+          <p className="text-sm text-muted-foreground">
             MACD is calculated by subtracting the 26-period Exponential Moving Average (EMA) from the 12-period EMA. The result of that calculation is the MACD line. A nine-day EMA of the MACD called the "signal line", is then plotted in addition to the MACD line. This together functions as a trigger for Bitcoin BTC buy and sell.
           </p>
         </div>
