@@ -1,5 +1,5 @@
 import React from 'react';
-import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card } from '@/components/ui/card';
 
 interface MACDChartProps {
@@ -47,6 +47,7 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
                 
                 const macdValue = data.macd;
                 const signalValue = data.macdSignal;
+                const histogramValue = data.macdHistogram;
                 
                 if (macdValue === null || signalValue === null) return '';
                 
@@ -58,6 +59,7 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
                     <div>Date: {formatDate(label)}</div>
                     <div style={{ color: 'hsl(var(--primary))' }}>MACD: {macdValue.toFixed(4)}</div>
                     <div style={{ color: 'hsl(var(--bearish))' }}>Signal: {signalValue.toFixed(4)}</div>
+                    <div style={{ color: 'hsl(var(--chart-2))' }}>Histogram: {histogramValue?.toFixed(4) || 'N/A'}</div>
                     <div style={{ color: recommendationColor, fontWeight: 'bold' }}>
                       Recommendation: {recommendation}
                     </div>
@@ -72,6 +74,7 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
               }}
             />
             <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
+            <Bar dataKey="macdHistogram" fill="hsl(var(--chart-2))" name="Histogram" />
             <Line type="monotone" dataKey="macd" stroke="hsl(var(--primary))" strokeWidth={2} name="MACD" dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey="macdSignal" stroke="hsl(var(--bearish))" strokeWidth={2} name="Signal" dot={false} isAnimationActive={false} />
           </ComposedChart>
