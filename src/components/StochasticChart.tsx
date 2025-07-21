@@ -39,7 +39,7 @@ const StochasticChart: React.FC<StochasticChartProps> = ({ chartData, chartHeigh
             <ReferenceLine y={20} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
             <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
             <Line type="monotone" dataKey="stochK" stroke="hsl(var(--primary))" strokeWidth={2} name="%K" dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="stochD" stroke="hsl(var(--accent))" strokeWidth={2} name="%D" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="stochD" stroke="hsl(var(--chart-2))" strokeWidth={2} name="%D" dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
