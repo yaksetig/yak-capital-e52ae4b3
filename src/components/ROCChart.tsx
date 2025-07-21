@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -82,7 +81,7 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
             
             <Tooltip 
               formatter={(value, name) => {
-                if (name === 'BTC Price') {
+                if (name === 'BTC Price (USD)') {
                   return [`$${Number(value).toLocaleString()}`, name];
                 } else if (name === 'ROC (20)') {
                   return [`${Number(value).toFixed(2)}%`, name];
@@ -110,9 +109,9 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
               yAxisId="price"
               type="monotone" 
               dataKey="price" 
-              stroke="hsl(var(--primary))" 
+              stroke="white" 
               strokeWidth={2} 
-              name="BTC Price" 
+              name="BTC Price (USD)" 
               dot={false} 
               isAnimationActive={false} 
             />
