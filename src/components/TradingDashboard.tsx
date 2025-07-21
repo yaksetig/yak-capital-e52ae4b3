@@ -70,6 +70,7 @@ const TradingDashboard = () => {
   const STOCH_D_PERIOD = 3;
   const ADX_PERIOD = 14;
   const ZSCORE_PERIOD = 30;
+  const CCI_PERIOD = 20;
 
   // Dynamic RSI period based on time range
   const getRSIPeriod = (timeRange: string) => {
@@ -423,6 +424,79 @@ const TradingDashboard = () => {
     };
   };
 
+  // CCI FUNCTIONS
+  // Helper function to calculate Commodity Channel Index (CCI)
+  const calculateCCI = (candles, period) => {
+    if (candles.length < period) return null;
+     
+    const recentCandles = candles.slice(-period);
+     
+    // Calculate typical prices (HLC/3)
+    const typicalPrices = recentCandles.map(candle => {
+      const high = parseFloat(candle[2]);
+      const low = parseFloat(candle[3]);
+      const close = parseFloat(candle[4]);
+      return (high + low + close) / 3;
+    });
+     
+    // Calculate Simple Moving Average of typical prices
+    const smaTP = typicalPrices.reduce((sum, tp) => sum + tp, 0) / period;
+     
+    // Calculate Mean Deviation
+    const meanDeviation = typicalPrices.reduce((sum, tp) => {
+      return sum + Math.abs(tp - smaTP);
+    }, 0) / period;
+     
+    // Calculate CCI
+    const currentTP = typicalPrices[typicalPrices.length - 1];
+    const cci = (currentTP - smaTP) / (0.015 * meanDeviation);
+     
+    return cci;
+  };
+
+  // Helper function to calculate CCI array for charting
+  const calculateCCIArray = (candles, period) => {
+    if (candles.length < period) return [];
+     
+    const cciArray = [];
+     
+    for (let i = period - 1; i < candles.length; i++) {
+      const periodCandles = candles.slice(i - period + 1, i + 1);
+         
+      // Calculate typical prices for this period
+      const typicalPrices = periodCandles.map(candle => {
+        const high = parseFloat(candle[2]);
+        const low = parseFloat(candle[3]);
+        const close = parseFloat(candle[4]);
+        return (high + low + close) / 3;
+      });
+         
+      // Calculate SMA of typical prices
+      const smaTP = typicalPrices.reduce((sum, tp) => sum + tp, 0) / period;
+         
+      // Calculate Mean Deviation
+      const meanDeviation = typicalPrices.reduce((sum, tp) => {
+        return sum + Math.abs(tp - smaTP);
+      }, 0) / period;
+         
+      // Calculate CCI
+      const currentTP = typicalPrices[typicalPrices.length - 1];
+      const cci = meanDeviation > 0 ? (currentTP - smaTP) / (0.015 * meanDeviation) : 0;
+         
+      cciArray.push(cci);
+    }
+     
+    return cciArray;
+  };
+
+  // Signal interpretation function
+  const getCCISignal = (cci) => {
+    if (cci === null) return "Unknown";
+    if (cci > 100) return "Overbought";
+    if (cci < -100) return "Oversold";
+    return "Neutral";
+  };
+
   // NEW Z-SCORE FUNCTIONS
   const calculateZScore = (values, period) => {
     if (values.length < period) return null;
@@ -681,6 +755,10 @@ const TradingDashboard = () => {
     
     const adxResult = calculateADX(rawData, ADX_PERIOD);
 
+    // CCI calculation
+    const currentCCI = calculateCCI(rawData, CCI_PERIOD);
+    const cciSignal = getCCISignal(currentCCI);
+
     // Z-SCORE CALCULATIONS
     const priceZScore = calculateZScore(prices, ZSCORE_PERIOD);
     const volumeZScore = calculateZScore(volumes, ZSCORE_PERIOD);
@@ -797,6 +875,7 @@ const TradingDashboard = () => {
     const vwapArray = calculateVWAPArray(chartDataSlice);
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
+    const cciArray = calculateCCIArray(rawData, CCI_PERIOD);
     
     let chartData = chartDataSlice.map((candle, index) => {
       const timestamp = parseInt(candle[0]);
@@ -841,6 +920,10 @@ const TradingDashboard = () => {
       // ADX for this point
       const adxPoint = calculateADX(candlesUpToThis, ADX_PERIOD);
 
+      // CCI for this point
+      const cciIndex = fullDataIndex - (CCI_PERIOD - 1);
+      const cciValue = cciIndex >= 0 && cciIndex < cciArray.length ? cciArray[cciIndex] : null;
+
       return {
         date: date.toISOString().split('T')[0],
         timestamp: timestamp,
@@ -856,6 +939,7 @@ const TradingDashboard = () => {
         bbMiddle: bbMid,
         bbLower: bbLow,
         rsi: rsi,
+        cci: cciValue,
         macd: macd,
         macdSignal: macdSig,
         macdHistogram: macdHist,
@@ -897,6 +981,8 @@ const TradingDashboard = () => {
       bullishScore,
       marketSentiment,
       crossSignal,
+      cci: currentCCI,
+      cciSignal,
       priceAboveSMA20,
       priceAboveSMA50,
       priceAboveSMA200,
@@ -1632,7 +1718,7 @@ const TradingDashboard = () => {
           {/* CCI Chart */}
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-semibold text-foreground">CCI ({indicators.rsiPeriod})</h2>
+              <h2 className="text-xl font-semibold text-foreground">CCI (20)</h2>
               <TimeRangeSelector 
                 selectedRange={timeRange}
                 onRangeChange={setTimeRange}
@@ -1646,7 +1732,7 @@ const TradingDashboard = () => {
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[-200, 200]} stroke="hsl(var(--muted-foreground))" />
                   <Tooltip 
-                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', `CCI (${indicators.rsiPeriod})`]}
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'CCI (20)']}
                     labelFormatter={(label) => `Date: ${formatDate(label)}`}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -1658,7 +1744,7 @@ const TradingDashboard = () => {
                   <ReferenceLine y={100} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
                   <ReferenceLine y={-100} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
                   <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-                  <Line type="monotone" dataKey="rsi" stroke="hsl(var(--accent))" strokeWidth={2} name={`CCI (${indicators.rsiPeriod})`} dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="cci" stroke="hsl(var(--accent))" strokeWidth={2} name="CCI (20)" dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
