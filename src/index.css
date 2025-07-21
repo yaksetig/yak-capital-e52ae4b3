@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -46,6 +47,13 @@ All colors MUST be HSL.
     --chart-grid: 220 13% 20%;
     --chart-bg: 220 13% 8%;
 
+    /* Chart line colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 271 81% 56%;
+    --chart-5: 197 71% 73%;
+
     /* Gradient backgrounds */
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(224 76% 48%));
     --gradient-success: linear-gradient(135deg, hsl(120 100% 35%), hsl(142 76% 36%));
@@ -91,6 +99,13 @@ All colors MUST be HSL.
     --neutral: 43 96% 56%;
     --chart-grid: 214.3 31.8% 91.4%;
     --chart-bg: 0 0% 98%;
+
+    /* Chart line colors for light theme */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 271 81% 56%;
+    --chart-5: 197 71% 73%;
     
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(224 76% 48%));
     --gradient-success: linear-gradient(135deg, hsl(120 100% 35%), hsl(142 76% 36%));

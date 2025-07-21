@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -58,6 +57,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
   const lineOptions = [
     { key: 'sma20', label: 'SMA 20', color: 'text-neutral' },
     { key: 'sma50', label: 'SMA 50', color: 'text-bearish' },
+    { key: 'sma200', label: 'SMA 200', color: 'text-purple-400' },
     { key: 'ema20', label: 'EMA 20', color: 'text-accent' },
     { key: 'ema50', label: 'EMA 50', color: 'text-primary' },
     { key: 'bbUpper', label: 'BB Upper', color: 'text-muted-foreground' },
