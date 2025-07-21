@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface M2DataPoint {
   date: string;
@@ -18,12 +19,15 @@ export const useM2GlobalData = () => {
   const { data: rawData, isLoading, error } = useQuery({
     queryKey: ['m2-global-data'],
     queryFn: async (): Promise<M2ApiResponse[]> => {
-      console.log('Fetching M2 Global data...');
-      const response = await fetch('https://api.bitcoincounterflow.com/api/m2-global');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('Fetching M2 Global data via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('fetch-m2-data');
+      
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw new Error(`Edge Function error: ${error.message}`);
       }
-      const data = await response.json();
+      
       console.log('M2 Global data received:', { count: data.length, sample: data[0] });
       return data;
     },

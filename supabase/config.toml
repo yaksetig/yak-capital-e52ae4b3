@@ -3,3 +3,6 @@ project_id = "envcoclhjitywvgwuywn"
 
 [functions.fetch-news]
 verify_jwt = false
+
+[functions.fetch-m2-data]
+verify_jwt = false
