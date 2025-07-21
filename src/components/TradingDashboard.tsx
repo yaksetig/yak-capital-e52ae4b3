@@ -565,6 +565,41 @@ const TradingDashboard = () => {
       return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
     }
 
+    // STEP 1: Calculate ALL indicators on the FULL 201-day dataset FIRST
+    const fullSMA20Array = [];
+    const fullSMA50Array = [];
+    const fullSMA200Array = [];
+    const fullEMA20Array = [];
+    const fullEMA50Array = [];
+    const fullEMA200Array = [];
+    const fullBBMidArray = [];
+    const fullBBUpArray = [];
+    const fullBBLowArray = [];
+    const fullRSIArray = [];
+    const fullATRArray = [];
+    
+    // Calculate indicators for the full dataset
+    for (let i = 0; i < rawData.length; i++) {
+      const pricesUpToThis = prices.slice(0, i + 1);
+      const candlesUpToThis = rawData.slice(0, i + 1);
+      
+      fullSMA20Array.push(calculateSMA(pricesUpToThis, 20));
+      fullSMA50Array.push(calculateSMA(pricesUpToThis, 50));
+      fullSMA200Array.push(calculateSMA(pricesUpToThis, 200));
+      fullEMA20Array.push(calculateEMA(pricesUpToThis, 20));
+      fullEMA50Array.push(calculateEMA(pricesUpToThis, 50));
+      fullEMA200Array.push(calculateEMA(pricesUpToThis, 200));
+      fullRSIArray.push(calculateRSI(pricesUpToThis, RSI_PERIOD));
+      fullATRArray.push(calculateATR(candlesUpToThis, 14));
+      
+      const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
+      const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
+      fullBBMidArray.push(bbMid);
+      fullBBUpArray.push(bbMid !== null && bbStd !== null ? bbMid + (BB_MULTIPLIER * bbStd) : null);
+      fullBBLowArray.push(bbMid !== null && bbStd !== null ? bbMid - (BB_MULTIPLIER * bbStd) : null);
+    }
+
+    // Calculate current indicators for summary (using last values)
     const currentSMAs: Record<string, number | null> = {};
     SMA_PERIODS.forEach(period => {
       currentSMAs[`sma${period}`] = calculateSMA(prices, period, 0);
@@ -593,7 +628,7 @@ const TradingDashboard = () => {
     
     const adxResult = calculateADX(rawData, ADX_PERIOD);
 
-    // NEW Z-SCORE CALCULATIONS
+    // Z-SCORE CALCULATIONS
     const priceZScore = calculateZScore(prices, ZSCORE_PERIOD);
     const volumeZScore = calculateZScore(volumes, ZSCORE_PERIOD);
     
@@ -690,40 +725,6 @@ const TradingDashboard = () => {
     else if (bullishScore <= 3) marketSentiment = "bearish";
     else marketSentiment = "neutral";
 
-    // STEP 1: Calculate ALL indicators on the FULL 201-day dataset FIRST
-    const fullSMA20Array = [];
-    const fullSMA50Array = [];
-    const fullSMA200Array = [];
-    const fullEMA20Array = [];
-    const fullEMA50Array = [];
-    const fullEMA200Array = [];
-    const fullBBMidArray = [];
-    const fullBBUpArray = [];
-    const fullBBLowArray = [];
-    const fullRSIArray = [];
-    const fullATRArray = [];
-    
-    // Calculate indicators for each data point using full historical context
-    for (let i = 0; i < rawData.length; i++) {
-      const pricesUpToThis = prices.slice(0, i + 1);
-      const candlesUpToThis = rawData.slice(0, i + 1);
-      
-      fullSMA20Array.push(calculateSMA(pricesUpToThis, 20));
-      fullSMA50Array.push(calculateSMA(pricesUpToThis, 50));
-      fullSMA200Array.push(calculateSMA(pricesUpToThis, 200));
-      fullEMA20Array.push(calculateEMA(pricesUpToThis, 20));
-      fullEMA50Array.push(calculateEMA(pricesUpToThis, 50));
-      fullEMA200Array.push(calculateEMA(pricesUpToThis, 200));
-      fullRSIArray.push(calculateRSI(pricesUpToThis, RSI_PERIOD));
-      fullATRArray.push(calculateATR(candlesUpToThis, 14));
-      
-      const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
-      const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
-      fullBBMidArray.push(bbMid);
-      fullBBUpArray.push(bbMid !== null && bbStd !== null ? bbMid + (BB_MULTIPLIER * bbStd) : null);
-      fullBBLowArray.push(bbMid !== null && bbStd !== null ? bbMid - (BB_MULTIPLIER * bbStd) : null);
-    }
-    
     // STEP 2: Now prepare chart data for the selected time window
     const vwapArray = calculateVWAPArray(rawData.slice(-60));
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
@@ -834,7 +835,6 @@ const TradingDashboard = () => {
       sma50: currentSMAs.sma50,
       sma200: currentSMAs.sma200,
       rsiPeriod: RSI_PERIOD,
-      // NEW Z-SCORE INDICATORS
       priceZScore,
       volumeZScore,
       rsiZScore,
