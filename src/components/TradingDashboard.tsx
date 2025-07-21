@@ -1492,6 +1492,8 @@ const TradingDashboard = () => {
             chartData={chartData}
             chartHeight={chartHeight}
             formatDate={formatDate}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
           />
 
           {/* MACD Chart - Separated with its own parameters */}

@@ -1,14 +1,17 @@
 import React from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card } from '@/components/ui/card';
+import TimeRangeSelector from './TimeRangeSelector';
 
 interface TimeSeriesMomentumChartProps {
   chartData: any[];
   chartHeight: number;
   formatDate: (date: string) => string;
+  timeRange: string;
+  onTimeRangeChange: (range: string) => void;
 }
 
-const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chartData, chartHeight, formatDate }) => {
+const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chartData, chartHeight, formatDate, timeRange, onTimeRangeChange }) => {
   return (
     <Card className="p-6 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -18,6 +21,11 @@ const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chart
             MACD is calculated by subtracting the 26-period Exponential Moving Average (EMA) from the 12-period EMA. The result of that calculation is the MACD line. A nine-day EMA of the MACD called the "signal line", is then plotted in addition to the MACD line. This together functions as a trigger for Bitcoin BTC buy and sell.
           </p>
         </div>
+        <TimeRangeSelector 
+          selectedRange={timeRange}
+          onRangeChange={onTimeRangeChange}
+          className="scale-90"
+        />
       </div>
       <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
         <ResponsiveContainer width="100%" height="100%">
