@@ -35,6 +35,7 @@ const TradingDashboard = () => {
     price: true,
     sma20: true,
     sma50: true,
+    sma200: true,
     ema20: true,
     ema50: true,
     bbUpper: true,
@@ -705,6 +706,7 @@ const TradingDashboard = () => {
       
       const sma20 = calculateSMA(pricesUpToThis, 20);
       const sma50 = calculateSMA(pricesUpToThis, 50);
+      const sma200 = calculateSMA(pricesUpToThis, 200);
       const ema20 = calculateEMA(pricesUpToThis, 20);
       const ema50 = calculateEMA(pricesUpToThis, 50);
       const rsi = calculateRSI(pricesUpToThis, RSI_PERIOD);
@@ -739,6 +741,7 @@ const TradingDashboard = () => {
         volume: volume,
         sma20: sma20,
         sma50: sma50,
+        sma200: sma200,
         ema20: ema20,
         ema50: ema50,
         bbUpper: bbUp,
@@ -1328,6 +1331,7 @@ const TradingDashboard = () => {
                  
                  {visibleLines.sma20 && <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} isAnimationActive={false} />}
                  {visibleLines.sma50 && <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} isAnimationActive={false} />}
+                 {visibleLines.sma200 && <Line type="monotone" dataKey="sma200" stroke="hsl(var(--chart-4))" strokeWidth={2} name="SMA 200" dot={false} isAnimationActive={false} />}
                  {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} isAnimationActive={false} />}
                  {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} isAnimationActive={false} />}
                  
