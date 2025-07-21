@@ -12,6 +12,11 @@ interface TimeSeriesMomentumChartProps {
 }
 
 const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chartData, chartHeight, formatDate, timeRange, onTimeRangeChange }) => {
+  // Calculate momentum
+  const firstPrice = chartData.length > 0 ? chartData[0].price : 0;
+  const lastPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;
+  const momentum = firstPrice !== 0 ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0;
+  const isPositive = momentum > 0;
   return (
     <Card className="p-6 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -20,6 +25,22 @@ const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chart
           <p className="text-sm text-muted-foreground">
             Bitcoin price movement over time showing the momentum and trend direction.
           </p>
+          
+          {/* Momentum Calculation */}
+          <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Time Series Momentum: </span>
+              <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {momentum.toFixed(2)}%
+              </span>
+            </div>
+            <div className="text-sm mt-1">
+              <span className="text-muted-foreground">Recommendation: </span>
+              <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {isPositive ? 'BUY' : 'SELL'}
+              </span>
+            </div>
+          </div>
         </div>
         <TimeRangeSelector 
           selectedRange={timeRange}
