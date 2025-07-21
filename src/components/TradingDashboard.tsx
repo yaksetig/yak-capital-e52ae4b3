@@ -2099,47 +2099,6 @@ const TradingDashboard = () => {
             }}
           />
 
-          {/* Additional Context */}
-          <Card>
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                How Our AI Works
-              </h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Technical Analysis</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Our AI analyzes multiple technical indicators including RSI, MACD, moving averages, 
-                      and volume patterns to identify trading opportunities.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Market Sentiment</h4>
-                    <p className="text-sm text-muted-foreground">
-                      We incorporate market sentiment data, fear & greed index, and social signals 
-                      to provide comprehensive market context.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Risk Assessment</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Each recommendation includes a confidence score and risk analysis to help you 
-                      make informed trading decisions.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Real-time Updates</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Our analysis is updated regularly throughout the day to reflect changing 
-                      market conditions and new data.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
 
           {/* Disclaimer */}
           <Card className="border-yellow-200 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-900/10">
