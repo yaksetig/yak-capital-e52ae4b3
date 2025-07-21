@@ -18,7 +18,7 @@ const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chart
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-2">Time Series Momentum</h2>
           <p className="text-sm text-muted-foreground">
-            MACD is calculated by subtracting the 26-period Exponential Moving Average (EMA) from the 12-period EMA. The result of that calculation is the MACD line. A nine-day EMA of the MACD called the "signal line", is then plotted in addition to the MACD line. This together functions as a trigger for Bitcoin BTC buy and sell.
+            Bitcoin price movement over time showing the momentum and trend direction.
           </p>
         </div>
         <TimeRangeSelector 
@@ -41,22 +41,14 @@ const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chart
                 const data = payload[0]?.payload;
                 if (!data) return '';
                 
-                const macdValue = data.macd;
-                const signalValue = data.macdSignal;
+                const priceValue = data.price;
                 
-                if (macdValue === null || signalValue === null) return '';
-                
-                const recommendation = macdValue > signalValue ? 'Buy' : 'Sell';
-                const recommendationColor = macdValue > signalValue ? '#22c55e' : '#ef4444';
+                if (priceValue === null || priceValue === undefined) return '';
                 
                 return (
                   <div style={{ color: 'hsl(var(--foreground))' }}>
                     <div>Date: {formatDate(label)}</div>
-                    <div style={{ color: 'hsl(var(--primary))' }}>MACD: {macdValue.toFixed(4)}</div>
-                    <div style={{ color: 'hsl(var(--bearish))' }}>Signal: {signalValue.toFixed(4)}</div>
-                    <div style={{ color: recommendationColor, fontWeight: 'bold' }}>
-                      Recommendation: {recommendation}
-                    </div>
+                    <div style={{ color: 'hsl(var(--primary))' }}>Price: ${priceValue.toLocaleString()}</div>
                   </div>
                 );
               }}
@@ -67,9 +59,7 @@ const TimeSeriesMomentumChart: React.FC<TimeSeriesMomentumChartProps> = ({ chart
                 color: 'hsl(var(--foreground))'
               }}
             />
-            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-            <Line type="monotone" dataKey="macd" stroke="hsl(var(--primary))" strokeWidth={2} name="MACD" dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="macdSignal" stroke="hsl(var(--bearish))" strokeWidth={2} name="Signal" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={3} name="BTC Price" dot={false} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
