@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.fetch-m2-data]
 verify_jwt = false
+
+[functions.fetch-ai-recommendation]
+verify_jwt = false

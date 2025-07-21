@@ -18,6 +18,7 @@ import StochasticChart from './StochasticChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
+import AIRecommendationSection from './AIRecommendationSection';
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -1957,6 +1958,22 @@ const TradingDashboard = () => {
             </table>
           </div>
         </Card>
+
+        {/* AI Recommendation Section */}
+        <AIRecommendationSection 
+          symbol={symbol} 
+          marketData={{
+            price: indicators.currentPrice,
+            change: rawData.length >= 2 ? ((rawData[rawData.length - 1]?.close - rawData[rawData.length - 2]?.close) / rawData[rawData.length - 2]?.close * 100) : 0,
+            rsi: indicators.rsi,
+            macd: indicators.macdSignal > 0 ? 'Bullish' : 'Bearish',
+            fearGreed: fearGreedData?.value ? parseInt(fearGreedData.value) : undefined,
+            rank: fearGreedData?.value_classification === 'Extreme Fear' ? 1 : undefined,
+            maStatus: indicators.currentPrice > indicators.sma200 ? 'Above SMA200' : 'Below SMA200',
+            volume: 'Analyzing current levels',
+            levels: 'Analyzing current levels'
+          }}
+        />
 
         {/* News Section */}
         <NewsSection symbol={symbol} />
