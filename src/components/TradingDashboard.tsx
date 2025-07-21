@@ -67,14 +67,14 @@ const TradingDashboard: React.FC = () => {
   };
 
   // Get latest values for info cards
-  const latestData = chartData[chartData.length - 1];
+  const latestData = chartData && chartData.length > 0 ? chartData[chartData.length - 1] : null;
   const latestPrice = latestData?.price || 0;
   const latestRSI = latestData?.rsi || 0;
   const latestCCI = latestData?.cci || 0;
   const latestZScore = latestData?.zScore || 0;
 
   // Price change calculation
-  const priceChange = chartData.length > 1 ? 
+  const priceChange = chartData && chartData.length > 1 ? 
     ((latestPrice - chartData[0].price) / chartData[0].price) * 100 : 0;
 
   // Fear & Greed interpretation
