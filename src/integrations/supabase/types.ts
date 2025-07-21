@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_trade_recommendations: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          reasoning: string | null
+          recommendation: string
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          reasoning?: string | null
+          recommendation: string
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          reasoning?: string | null
+          recommendation?: string
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       news_articles: {
         Row: {
           authors: string[] | null
