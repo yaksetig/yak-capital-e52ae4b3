@@ -354,6 +354,7 @@ const TradingDashboard: React.FC = () => {
     }
 
     return rawData.map((candle, index) => ({
+      timestamp: candle[0], // Keep raw timestamp for axis formatting
       date: formatTimestamp(candle[0]),
       price: parseFloat(candle[4]),
       high: parseFloat(candle[2]),
@@ -472,7 +473,7 @@ const TradingDashboard: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={filteredChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
-              <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+              <XAxis dataKey="timestamp" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
               <YAxis domain={['dataMin', 'dataMax']} stroke="hsl(var(--muted-foreground))" />
               <Tooltip 
                 formatter={(value) => [`$${typeof value === 'number' ? value.toFixed(2) : 'N/A'}`, 'Price']}
@@ -501,7 +502,7 @@ const TradingDashboard: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={filteredChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
-              <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+              <XAxis dataKey="timestamp" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
               <YAxis domain={[-200, 200]} stroke="hsl(var(--muted-foreground))" />
               <Tooltip 
                 formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'CCI (20)']}
@@ -531,7 +532,7 @@ const TradingDashboard: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={filteredChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
-              <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+              <XAxis dataKey="timestamp" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
               <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
               <Tooltip 
                 formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'RSI (14)']}
@@ -557,7 +558,7 @@ const TradingDashboard: React.FC = () => {
 export default TradingDashboard;
 
 // Custom tick formatter function to display date
-const formatDate = (timestamp: string) => {
-  const date = new Date(timestamp);
-  return format(date, "MMM d, yyyy");
+const formatDate = (timestamp: number) => {
+  const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+  return format(date, "MMM d");
 };
