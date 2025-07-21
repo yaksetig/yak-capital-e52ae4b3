@@ -51,11 +51,20 @@ const TradingDashboard: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(`/api/historical-data?range=${timeRange}`);
-        setRawData(response.data);
+        // For now, use mock data since the API endpoint doesn't exist
+        // TODO: Replace with actual Bitcoin price data from a working API
+        const mockData = Array.from({ length: 100 }, (_, i) => [
+          Date.now() / 1000 - (99 - i) * 86400, // timestamp (days ago)
+          65000 + Math.random() * 10000, // open
+          67000 + Math.random() * 10000, // high  
+          63000 + Math.random() * 10000, // low
+          65500 + Math.random() * 10000, // close
+          Math.random() * 1000000 // volume
+        ]);
+        setRawData(mockData);
       } catch (error) {
         console.error("Failed to fetch historical data:", error);
-        setRawData(null);
+        setRawData([]);
       } finally {
         setIsLoading(false);
       }
