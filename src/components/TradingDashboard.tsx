@@ -690,7 +690,41 @@ const TradingDashboard = () => {
     else if (bullishScore <= 3) marketSentiment = "bearish";
     else marketSentiment = "neutral";
 
-    // Prepare chart data with VWAP and Z-scores
+    // STEP 1: Calculate ALL indicators on the FULL 201-day dataset FIRST
+    const fullSMA20Array = [];
+    const fullSMA50Array = [];
+    const fullSMA200Array = [];
+    const fullEMA20Array = [];
+    const fullEMA50Array = [];
+    const fullEMA200Array = [];
+    const fullBBMidArray = [];
+    const fullBBUpArray = [];
+    const fullBBLowArray = [];
+    const fullRSIArray = [];
+    const fullATRArray = [];
+    
+    // Calculate indicators for each data point using full historical context
+    for (let i = 0; i < rawData.length; i++) {
+      const pricesUpToThis = prices.slice(0, i + 1);
+      const candlesUpToThis = rawData.slice(0, i + 1);
+      
+      fullSMA20Array.push(calculateSMA(pricesUpToThis, 20));
+      fullSMA50Array.push(calculateSMA(pricesUpToThis, 50));
+      fullSMA200Array.push(calculateSMA(pricesUpToThis, 200));
+      fullEMA20Array.push(calculateEMA(pricesUpToThis, 20));
+      fullEMA50Array.push(calculateEMA(pricesUpToThis, 50));
+      fullEMA200Array.push(calculateEMA(pricesUpToThis, 200));
+      fullRSIArray.push(calculateRSI(pricesUpToThis, RSI_PERIOD));
+      fullATRArray.push(calculateATR(candlesUpToThis, 14));
+      
+      const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
+      const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
+      fullBBMidArray.push(bbMid);
+      fullBBUpArray.push(bbMid !== null && bbStd !== null ? bbMid + (BB_MULTIPLIER * bbStd) : null);
+      fullBBLowArray.push(bbMid !== null && bbStd !== null ? bbMid - (BB_MULTIPLIER * bbStd) : null);
+    }
+    
+    // STEP 2: Now prepare chart data for the selected time window
     const vwapArray = calculateVWAPArray(rawData.slice(-60));
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
@@ -701,23 +735,25 @@ const TradingDashboard = () => {
       const volume = parseFloat(candle[5]);
       const date = new Date(timestamp);
       
-      // Use full historical data for each calculation instead of artificially limiting it
-      const actualIndex = rawData.length - 60 + index;
-      const pricesUpToThis = prices.slice(0, actualIndex + 1);
-      const candlesUpToThis = rawData.slice(0, actualIndex + 1);
+      // Use pre-calculated indicators from the full dataset
+      const fullDataIndex = rawData.length - 60 + index;
       
-      const sma20 = calculateSMA(pricesUpToThis, 20);
-      const sma50 = calculateSMA(pricesUpToThis, 50);
-      const sma200 = calculateSMA(pricesUpToThis, 200);
-      const ema20 = calculateEMA(pricesUpToThis, 20);
-      const ema50 = calculateEMA(pricesUpToThis, 50);
-      const rsi = calculateRSI(pricesUpToThis, RSI_PERIOD);
-      const atr = calculateATR(candlesUpToThis, 14);
+      const sma20 = fullSMA20Array[fullDataIndex];
+      const sma50 = fullSMA50Array[fullDataIndex];
+      const sma200 = fullSMA200Array[fullDataIndex];
+      const ema20 = fullEMA20Array[fullDataIndex];
+      const ema50 = fullEMA50Array[fullDataIndex];
+      const ema200 = fullEMA200Array[fullDataIndex];
+      const rsi = fullRSIArray[fullDataIndex];
+      const atr = fullATRArray[fullDataIndex];
       
-      const bbMid = calculateSMA(pricesUpToThis, BB_PERIOD);
-      const bbStd = calculateStandardDeviation(pricesUpToThis, BB_PERIOD);
-      const bbUp = bbMid !== null && bbStd !== null ? bbMid + (BB_MULTIPLIER * bbStd) : null;
-      const bbLow = bbMid !== null && bbStd !== null ? bbMid - (BB_MULTIPLIER * bbStd) : null;
+      const bbMid = fullBBMidArray[fullDataIndex];
+      const bbUp = fullBBUpArray[fullDataIndex];
+      const bbLow = fullBBLowArray[fullDataIndex];
+      
+      // Calculate additional indicators that need current context
+      const pricesUpToThis = prices.slice(0, fullDataIndex + 1);
+      const candlesUpToThis = rawData.slice(0, fullDataIndex + 1);
       
       let macd = null, macdSig = null, macdHist = null;
       if (pricesUpToThis.length >= MACD_SLOW) {
@@ -746,6 +782,7 @@ const TradingDashboard = () => {
         sma200: sma200,
         ema20: ema20,
         ema50: ema50,
+        ema200: ema200,
         bbUpper: bbUp,
         bbMiddle: bbMid,
         bbLower: bbLow,
