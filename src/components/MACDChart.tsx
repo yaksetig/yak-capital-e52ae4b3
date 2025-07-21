@@ -44,8 +44,8 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
                 return (
                   <div style={{ color: 'hsl(var(--foreground))' }}>
                     <div>Date: {formatDate(label)}</div>
-                    <div>MACD: {macdValue.toFixed(4)}</div>
-                    <div>Signal: {signalValue.toFixed(4)}</div>
+                    <div style={{ color: 'hsl(var(--primary))' }}>MACD: {macdValue.toFixed(4)}</div>
+                    <div style={{ color: 'hsl(var(--bearish))' }}>Signal: {signalValue.toFixed(4)}</div>
                     <div style={{ color: recommendationColor, fontWeight: 'bold' }}>
                       Recommendation: {recommendation}
                     </div>
