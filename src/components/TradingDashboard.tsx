@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -17,6 +16,7 @@ import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
 import StochasticChart from './StochasticChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
+import { useM2GlobalData } from '../hooks/useM2GlobalData';
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -53,6 +53,9 @@ const TradingDashboard = () => {
 
   // Fear and Greed Index
   const { data: fearGreedData, loading: fearGreedLoading, error: fearGreedError, refetch: refetchFearGreed } = useFearGreedIndex();
+
+  // M2 Global Data
+  const { data: m2Data, loading: m2Loading, error: m2Error } = useM2GlobalData();
 
   // Configuration
   const LOOKBACK_DAYS = 201;
@@ -556,6 +559,43 @@ const TradingDashboard = () => {
     setAutoFit(true);
   };
 
+  // Helper function to correlate M2 data with price data
+  const correlateM2WithPriceData = (priceData: any[], m2Data: any[]) => {
+    if (!m2Data || m2Data.length === 0) return priceData;
+
+    // Create a map of M2 data by date for efficient lookup
+    const m2Map = new Map();
+    m2Data.forEach(item => {
+      const date = new Date(item.date).toISOString().split('T')[0];
+      m2Map.set(date, item.m2Supply);
+    });
+
+    // Add M2 data to price data where dates match
+    return priceData.map(item => {
+      const m2Supply = m2Map.get(item.date);
+      return {
+        ...item,
+        m2Supply: m2Supply || null
+      };
+    });
+  };
+
+  // Helper function to format M2 supply values
+  const formatM2Supply = (value: number) => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    const trillion = 1000000000000;
+    const billion = 1000000000;
+    
+    if (value >= trillion) {
+      return `$${(value / trillion).toFixed(2)}T`;
+    } else if (value >= billion) {
+      return `$${(value / billion).toFixed(2)}B`;
+    } else {
+      return `$${value.toLocaleString()}`;
+    }
+  };
+
   const processedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
 
@@ -746,7 +786,7 @@ const TradingDashboard = () => {
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
     
-    const chartData = chartDataSlice.map((candle, index) => {
+    let chartData = chartDataSlice.map((candle, index) => {
       const timestamp = parseInt(candle[0]);
       const price = parseFloat(candle[4]);
       const volume = parseFloat(candle[5]);
@@ -816,6 +856,9 @@ const TradingDashboard = () => {
         volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - daysToShow + index] : null
       };
     });
+
+    // Correlate M2 data with price data
+    chartData = correlateM2WithPriceData(chartData, m2Data);
 
     const indicators = {
       ...currentSMAs,
@@ -927,7 +970,7 @@ const TradingDashboard = () => {
     }
 
     return { chartData: extendedChartData, indicators, cycles, cycleStrength, cycleProjections };
-  }, [rawData, showCycleAnalysis, timeRange]);
+  }, [rawData, showCycleAnalysis, timeRange, m2Data]);
 
   useEffect(() => {
     fetchBinanceData();
@@ -1451,18 +1494,28 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
-        {/* Price vs Global Liquidity Chart */}
+        {/* Price vs Global Liquidity Chart - Updated */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2)</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2)</h2>
+              {m2Loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
+            </div>
             <TimeRangeSelector 
               selectedRange={timeRange}
               onRangeChange={setTimeRange}
             />
           </div>
+          
+          {m2Error && (
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive">Failed to load M2 data: {m2Error.message}</p>
+            </div>
+          )}
+          
           <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredChartData}>
+              <ComposedChart data={filteredChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                 <XAxis 
                   dataKey="date" 
@@ -1470,12 +1523,24 @@ const TradingDashboard = () => {
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis 
+                  yAxisId="price"
+                  orientation="left"
                   domain={yAxisDomain}
                   tickFormatter={formatPriceShort}
                   stroke="hsl(var(--muted-foreground))"
                 />
+                <YAxis 
+                  yAxisId="m2"
+                  orientation="right"
+                  tickFormatter={formatM2Supply}
+                  stroke="hsl(var(--chart-2))"
+                />
                 <Tooltip 
-                  formatter={(value, name) => [formatPrice(value), name]}
+                  formatter={(value, name) => {
+                    if (name === 'Price') return [formatPrice(value), name];
+                    if (name === 'M2 Supply') return [formatM2Supply(value), name];
+                    return [value, name];
+                  }}
                   labelFormatter={(label) => `Date: ${formatDate(label)}`}
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -1486,9 +1551,31 @@ const TradingDashboard = () => {
                 />
                 <Legend />
                 
-                {/* Only show the price line */}
-                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} isAnimationActive={false} />
-              </LineChart>
+                <Line 
+                  yAxisId="price"
+                  type="monotone" 
+                  dataKey="price" 
+                  stroke="hsl(var(--foreground))" 
+                  strokeWidth={3} 
+                  name="Price" 
+                  dot={false} 
+                  isAnimationActive={false} 
+                />
+                
+                {filteredChartData.some(d => d.m2Supply) && (
+                  <Line 
+                    yAxisId="m2"
+                    type="monotone" 
+                    dataKey="m2Supply" 
+                    stroke="hsl(var(--chart-2))" 
+                    strokeWidth={2} 
+                    name="M2 Supply" 
+                    dot={false} 
+                    isAnimationActive={false}
+                    connectNulls={false}
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </Card>
