@@ -12,6 +12,7 @@ import CycleAnalysisPanel from './CycleAnalysisPanel';
 import NewsSection from './NewsSection';
 import CycleProjectionModal from './CycleProjectionModal';
 import MACDChart from './MACDChart';
+import StochasticChart from './StochasticChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 
@@ -1507,41 +1508,12 @@ const TradingDashboard = () => {
             </div>
           </Card>
 
-          {/* Stochastic Chart */}
-          <Card className="p-6 shadow-card border-border">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-semibold text-foreground">Stochastic (14,3)</h2>
-              <TimeRangeSelector 
-                selectedRange={timeRange}
-                onRangeChange={setTimeRange}
-                className="scale-90"
-              />
-            </div>
-            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
-                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    formatter={(value, name) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', name]}
-                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--foreground))'
-                    }}
-                  />
-                  <ReferenceLine y={80} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
-                  <ReferenceLine y={20} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
-                  <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-                  <Line type="monotone" dataKey="stochK" stroke="hsl(var(--primary))" strokeWidth={2} name="%K" dot={false} isAnimationActive={false} />
-                  <Line type="monotone" dataKey="stochD" stroke="hsl(var(--chart-1))" strokeWidth={2} name="%D" dot={false} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+          {/* Stochastic Chart - Separated with its own parameters */}
+          <StochasticChart 
+            chartData={chartData}
+            chartHeight={chartHeight}
+            formatDate={formatDate}
+          />
 
           {/* ADX Chart */}
           <Card className="p-6 shadow-card border-border">
