@@ -1717,17 +1717,12 @@ const TradingDashboard = () => {
 
           {/* CCI Chart */}
           <Card className="p-6 shadow-card border-border">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-semibold text-foreground">CCI (20)</h2>
-              <TimeRangeSelector 
-                selectedRange={timeRange}
-                onRangeChange={setTimeRange}
-                className="scale-90"
-              />
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-foreground">CCI (20) - Last 20 Days</h2>
             </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredChartData}>
+                <LineChart data={chartData.slice(-20)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
                   <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[-200, 200]} stroke="hsl(var(--muted-foreground))" />
