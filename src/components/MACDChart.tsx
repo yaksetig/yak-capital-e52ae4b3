@@ -26,32 +26,32 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
             <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
             <YAxis stroke="hsl(var(--muted-foreground))" />
             <Tooltip 
-              formatter={(value, name, props) => {
-                const currentData = props.payload;
-                if (currentData) {
-                  const macdValue = currentData.macd;
-                  const signalValue = currentData.macdSignal;
-                  
-                  if (macdValue !== null && signalValue !== null) {
-                    const recommendation = macdValue > signalValue ? 'Buy' : 'Sell';
-                    const recommendationColor = macdValue > signalValue ? '#22c55e' : '#ef4444';
-                    
-                    return [
-                      <div key="macd-tooltip">
-                        <div>Date: {formatDate(currentData.date)}</div>
-                        <div>MACD: {macdValue.toFixed(4)}</div>
-                        <div>Signal: {signalValue.toFixed(4)}</div>
-                        <div style={{ color: recommendationColor, fontWeight: 'bold', marginTop: '4px' }}>
-                          Recommendation: {recommendation}
-                        </div>
-                      </div>,
-                      ''
-                    ];
-                  }
-                }
-                return [typeof value === 'number' ? value.toFixed(4) : 'N/A', name];
+              formatter={() => [null, null]}
+              labelFormatter={(label, payload) => {
+                if (!payload || payload.length === 0) return '';
+                
+                const data = payload[0]?.payload;
+                if (!data) return '';
+                
+                const macdValue = data.macd;
+                const signalValue = data.macdSignal;
+                
+                if (macdValue === null || signalValue === null) return '';
+                
+                const recommendation = macdValue > signalValue ? 'Buy' : 'Sell';
+                const recommendationColor = macdValue > signalValue ? '#22c55e' : '#ef4444';
+                
+                return (
+                  <div style={{ color: 'hsl(var(--foreground))' }}>
+                    <div>Date: {formatDate(label)}</div>
+                    <div>MACD: {macdValue.toFixed(4)}</div>
+                    <div>Signal: {signalValue.toFixed(4)}</div>
+                    <div style={{ color: recommendationColor, fontWeight: 'bold' }}>
+                      Recommendation: {recommendation}
+                    </div>
+                  </div>
+                );
               }}
-              labelFormatter={(label) => `Date: ${formatDate(label)}`}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
