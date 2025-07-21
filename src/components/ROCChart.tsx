@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -12,8 +13,27 @@ interface ROCChartProps {
 }
 
 const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate, timeRange, onTimeRangeChange }) => {
+  // Calculate dynamic ROC period based on time range
+  const getDynamicROCPeriod = (timeRange: string): number => {
+    switch (timeRange) {
+      case '7':
+        return 3;
+      case '30':
+        return 7;
+      case '60':
+        return 14;
+      case '90':
+        return 20;
+      case 'all':
+        return 30;
+      default:
+        return 20;
+    }
+  };
+
+  const period = getDynamicROCPeriod(timeRange);
+  
   // Calculate current ROC for display in info box
-  const period = 20;
   let currentROC = 0;
   let isPositive = false;
   
@@ -33,13 +53,13 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-2">ROC vs Price</h2>
           <p className="text-sm text-muted-foreground">
-            Rate of Change (20-period) compared with Bitcoin price movement.
+            Rate of Change ({period}-period) compared with Bitcoin price movement.
           </p>
           
           {/* ROC Calculation */}
           <div className="mt-3 p-3 bg-muted/50 rounded-lg">
             <div className="text-sm">
-              <span className="text-muted-foreground">Current ROC (20): </span>
+              <span className="text-muted-foreground">Current ROC ({period}): </span>
               <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                 {currentROC.toFixed(2)}%
               </span>
@@ -83,7 +103,7 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
               formatter={(value, name) => {
                 if (name === 'BTC Price (USD)') {
                   return [`$${Number(value).toLocaleString()}`, name];
-                } else if (name === 'ROC (20)') {
+                } else if (name === `ROC (${period})`) {
                   return [`${Number(value).toFixed(2)}%`, name];
                 }
                 return [value, name];
@@ -123,7 +143,7 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
               dataKey="roc" 
               stroke="hsl(var(--accent))" 
               strokeWidth={2} 
-              name="ROC (20)" 
+              name={`ROC (${period})`} 
               dot={false} 
               isAnimationActive={false} 
             />
