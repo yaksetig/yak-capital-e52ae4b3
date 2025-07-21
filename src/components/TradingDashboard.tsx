@@ -1717,43 +1717,41 @@ const TradingDashboard = () => {
                   The Relative Strength Index (RSI) is a popular technical analysis tool used to evaluate the strength of a financial instrument's price movement. It's a momentum oscillator that measures the magnitude of recent price changes to assess overbought or oversold conditions in the market.
                 </p>
                 
-                {/* RSI Trading Recommendations Table */}
-                <div className="bg-muted/50 rounded-lg p-3 mb-4">
-                  <h4 className="text-sm font-semibold text-foreground mb-2">Trading Recommendations</h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left p-1 font-semibold text-muted-foreground">Signal Type</th>
-                          <th className="text-left p-1 font-semibold text-muted-foreground">RSI Level</th>
-                          <th className="text-left p-1 font-semibold text-muted-foreground">Risk Level</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b border-border/50">
-                          <td className="p-1 text-green-600 font-medium">Moderate Buy</td>
-                          <td className="p-1">Below 30</td>
-                          <td className="p-1 text-green-500">Low</td>
-                        </tr>
-                        <tr className="border-b border-border/50">
-                          <td className="p-1 text-yellow-600 font-medium">Neutral</td>
-                          <td className="p-1">30-70</td>
-                          <td className="p-1 text-yellow-500">Very Low</td>
-                        </tr>
-                        <tr className="border-b border-border/50">
-                          <td className="p-1 text-orange-600 font-medium">Moderate Sell</td>
-                          <td className="p-1">Above 70</td>
-                          <td className="p-1 text-orange-500">Low</td>
-                        </tr>
-                        <tr>
-                          <td className="p-1 text-red-600 font-medium">Strong Sell</td>
-                          <td className="p-1">Above 80</td>
-                          <td className="p-1 text-red-500">Medium</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                {/* RSI Current Recommendation */}
+                {indicators.rsi !== null && (
+                  <div className="bg-muted/50 rounded-lg p-3 mb-4">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Current RSI: </span>
+                      <span className="font-semibold">{indicators.rsi.toFixed(2)}</span>
+                      <span className="text-muted-foreground ml-4">Signal: </span>
+                      <span className={`font-semibold ${
+                        indicators.rsi < 30 ? 'text-green-600' : 
+                        indicators.rsi >= 30 && indicators.rsi <= 70 ? 'text-yellow-600' : 
+                        indicators.rsi > 70 && indicators.rsi <= 80 ? 'text-orange-600' : 
+                        'text-red-600'
+                      }`}>
+                        {indicators.rsi < 30 ? 'Moderate Buy' : 
+                         indicators.rsi >= 30 && indicators.rsi <= 70 ? 'Neutral' : 
+                         indicators.rsi > 70 && indicators.rsi <= 80 ? 'Moderate Sell' : 
+                         'Strong Sell'}
+                      </span>
+                      <span className="text-muted-foreground ml-2">
+                        (Risk: 
+                        <span className={`ml-1 ${
+                          indicators.rsi < 30 ? 'text-green-500' : 
+                          indicators.rsi >= 30 && indicators.rsi <= 70 ? 'text-yellow-500' : 
+                          indicators.rsi > 70 && indicators.rsi <= 80 ? 'text-orange-500' : 
+                          'text-red-500'
+                        }`}>
+                          {indicators.rsi < 30 ? 'Low' : 
+                           indicators.rsi >= 30 && indicators.rsi <= 70 ? 'Very Low' : 
+                           indicators.rsi > 70 && indicators.rsi <= 80 ? 'Low' : 
+                           'Medium'}
+                        </span>)
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               <TimeRangeSelector 
