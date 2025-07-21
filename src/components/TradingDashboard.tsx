@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InfoCard from './InfoCard';
@@ -18,7 +19,7 @@ import StochasticChart from './StochasticChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
-import AIRecommendationSection from './AIRecommendationSection';
+
 
 const TradingDashboard = () => {
   const [rawData, setRawData] = useState([]);
@@ -1489,6 +1490,32 @@ const TradingDashboard = () => {
           </Card>
         </div>
 
+        {/* AI Trade of the Day Navigation */}
+        <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Bot className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">AI Trade of the Day</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Get AI-powered trading recommendations based on comprehensive market analysis
+                  </p>
+                </div>
+              </div>
+              <Link to="/ai-trade">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Brain className="h-4 w-4 mr-2" />
+                  View AI Trade
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+
         {/* Chart Controls */}
         <ChartControls
           yAxisPadding={yAxisPadding}
@@ -2030,21 +2057,6 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
-        {/* AI Recommendation Section */}
-        <AIRecommendationSection 
-          symbol={symbol} 
-          marketData={{
-            price: indicators.currentPrice,
-            change: rawData.length >= 2 ? ((rawData[rawData.length - 1]?.close - rawData[rawData.length - 2]?.close) / rawData[rawData.length - 2]?.close * 100) : 0,
-            rsi: indicators.rsi,
-            macd: indicators.macdSignal > 0 ? 'Bullish' : 'Bearish',
-            fearGreed: fearGreedData?.value ? parseInt(fearGreedData.value) : undefined,
-            rank: fearGreedData?.value_classification === 'Extreme Fear' ? 1 : undefined,
-            maStatus: indicators.currentPrice > indicators.sma200 ? 'Above SMA200' : 'Below SMA200',
-            volume: 'Analyzing current levels',
-            levels: 'Analyzing current levels'
-          }}
-        />
 
         {/* News Section */}
         <NewsSection symbol={symbol} />
