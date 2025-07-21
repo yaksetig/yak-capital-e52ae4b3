@@ -28,7 +28,7 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
             <Tooltip 
               formatter={(value, name, props) => {
                 const currentData = props.payload;
-                if (name === 'MACD' && currentData) {
+                if (currentData) {
                   const macdValue = currentData.macd;
                   const signalValue = currentData.macdSignal;
                   
@@ -38,12 +38,13 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
                     
                     return [
                       <div key="macd-tooltip">
-                        <div>{typeof value === 'number' ? value.toFixed(4) : 'N/A'}</div>
+                        <div>MACD: {macdValue.toFixed(4)}</div>
+                        <div>Signal: {signalValue.toFixed(4)}</div>
                         <div style={{ color: recommendationColor, fontWeight: 'bold', marginTop: '4px' }}>
-                          Recommendation: {recommendation}
+                          {recommendation}
                         </div>
                       </div>,
-                      name
+                      ''
                     ];
                   }
                 }
