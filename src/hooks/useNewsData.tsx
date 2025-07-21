@@ -1,5 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NewsArticle {
   id?: string;
@@ -31,21 +32,15 @@ interface NewsArticle {
 const fetchNewsData = async (ticker: string): Promise<NewsArticle[]> => {
   console.log('Fetching news for ticker:', ticker);
   
-  // Call our Supabase Edge Function instead of direct API
-  const response = await fetch('/api/fetch-news', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ ticker: ticker.toUpperCase() }),
+  // Call our Supabase Edge Function using the supabase client
+  const { data, error } = await supabase.functions.invoke('fetch-news', {
+    body: { ticker: ticker.toUpperCase() },
   });
   
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `News API error: ${response.status}`);
+  if (error) {
+    console.error('Edge function error:', error);
+    throw new Error(error.message || 'Failed to fetch news');
   }
-  
-  const data: NewsArticle[] = await response.json();
   
   if (!Array.isArray(data)) {
     throw new Error('Invalid news data format');
