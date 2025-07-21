@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -69,7 +70,6 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
               yAxisId="price" 
               orientation="left" 
               stroke="hsl(var(--primary))" 
-              label={{ value: 'Price ($)', angle: -90, position: 'insideLeft' }}
             />
             
             {/* Right Y-axis for ROC */}
