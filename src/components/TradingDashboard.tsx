@@ -250,7 +250,7 @@ const TradingDashboard: React.FC = () => {
   };
 
   // Calculate technical indicators
-  const calculateIndicators = useMemo(() => {
+  const indicators = useMemo(() => {
     if (!rawData || rawData.length === 0) {
       return {
         sma20: null,
