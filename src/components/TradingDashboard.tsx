@@ -36,13 +36,13 @@ const TradingDashboard = () => {
   const [visibleLines, setVisibleLines] = useState({
     price: true,
     sma20: true,
-    sma50: true,
-    sma200: true,
-    ema20: true,
-    ema50: true,
+    sma50: false,
+    sma200: false,
+    ema20: false,
+    ema50: false,
     bbUpper: true,
     bbLower: true,
-    vwap: true,
+    vwap: false,
     cycle0: false,
     cycle1: false,
     cycle2: false
