@@ -86,8 +86,7 @@ const TradingDashboard: React.FC = () => {
     return 'Extreme Greed';
   };
 
-  const currentFearGreed = fearGreedData[fearGreedData.length - 1];
-  const fearGreedValue = currentFearGreed?.value || 50;
+  const fearGreedValue = fearGreedData ? parseInt(fearGreedData.value) : 50;
   const fearGreedStatus = getFearGreedStatus(fearGreedValue);
 
   // Handle cycle modal
@@ -132,10 +131,9 @@ const TradingDashboard: React.FC = () => {
             selectedRange={selectedTimeRange} 
             onRangeChange={setSelectedTimeRange}
           />
-          <ChartControls 
-            chartHeight={chartHeight} 
-            onHeightChange={setChartHeight} 
-          />
+          <div className="text-sm text-muted-foreground">
+            Chart Height: {chartHeight}px
+          </div>
         </div>
       </div>
 
@@ -143,28 +141,27 @@ const TradingDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <InfoCard
           title="Bitcoin Price"
-          value={`$${latestPrice.toFixed(2)}`}
-          change={priceChange}
-          trend={priceChange > 0 ? 'up' : 'down'}
+          shortDescription={`$${latestPrice.toFixed(2)} (${priceChange > 0 ? '+' : ''}${priceChange.toFixed(2)}%)`}
+          detailedExplanation="Current Bitcoin price with percentage change from the selected time period."
+          tradingTip="Look for strong support/resistance levels when price approaches key psychological levels."
         />
         <InfoCard
           title="RSI (14)"
-          value={latestRSI.toFixed(2)}
-          change={latestRSI - 50}
-          trend={latestRSI > 50 ? 'up' : 'down'}
+          shortDescription={`${latestRSI.toFixed(2)} - ${latestRSI > 70 ? 'Overbought' : latestRSI < 30 ? 'Oversold' : 'Neutral'}`}
+          detailedExplanation="Relative Strength Index measures momentum. Values above 70 indicate overbought conditions, below 30 indicate oversold."
+          tradingTip="RSI divergence with price can signal potential reversal points."
         />
         <InfoCard
-          title="Fear & Greed"
-          value={fearGreedValue.toString()}
-          change={0}
-          trend="neutral"
-          subtitle={fearGreedStatus}
+          title="Fear & Greed Index"
+          shortDescription={`${fearGreedValue} - ${fearGreedStatus}`}
+          detailedExplanation="Market sentiment indicator ranging from 0 (Extreme Fear) to 100 (Extreme Greed)."
+          tradingTip="Extreme fear often presents buying opportunities, while extreme greed suggests caution."
         />
         <InfoCard
           title="Z-Score"
-          value={latestZScore.toFixed(3)}
-          change={latestZScore}
-          trend={latestZScore > 0 ? 'up' : 'down'}
+          shortDescription={`${latestZScore.toFixed(3)} - ${Math.abs(latestZScore) > 2 ? 'Extreme' : 'Normal'}`}
+          detailedExplanation="Statistical measure showing how many standard deviations the current price is from the mean."
+          tradingTip="Z-scores beyond ±2 suggest price is statistically extreme and may revert to mean."
         />
       </div>
 
@@ -217,12 +214,14 @@ const TradingDashboard: React.FC = () => {
         <TimeSeriesMomentumChart 
           chartData={chartData} 
           chartHeight={chartHeight} 
-          formatDate={formatDate} 
+          formatDate={formatDate}
+          timeRange={selectedTimeRange}
+          onTimeRangeChange={setSelectedTimeRange}
         />
       </div>
 
       {/* News Section */}
-      <NewsSection />
+      <NewsSection symbol="BTC" />
 
       {/* Cycle Projection Modal */}
       <CycleProjectionModal 

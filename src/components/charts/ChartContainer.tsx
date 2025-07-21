@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 interface ChartContainerProps {
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children: React.ReactElement;
   height?: number;
   className?: string;
 }
