@@ -1,7 +1,7 @@
 import TradingDashboard from '@/components/TradingDashboard';
 
 const Index = () => {
-  return <TradingDashboard stockSymbol="BTC-USD" chartHeight={400} />;
+  return <TradingDashboard />;
 };
 
 export default Index;
