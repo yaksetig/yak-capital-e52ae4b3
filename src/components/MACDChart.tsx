@@ -17,6 +17,18 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
           <p className="text-sm text-muted-foreground">
             MACD is calculated by subtracting the 26-period Exponential Moving Average (EMA) from the 12-period EMA. The result of that calculation is the MACD line. A nine-day EMA of the MACD called the "signal line", is then plotted in addition to the MACD line. This together functions as a trigger for Bitcoin BTC buy and sell.
           </p>
+          {chartData.length > 0 && chartData[chartData.length - 1].macd !== null && chartData[chartData.length - 1].macdSignal !== null && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-muted-foreground">
+                  Current Status: MACD {chartData[chartData.length - 1].macd > chartData[chartData.length - 1].macdSignal ? '>' : '<'} Signal
+                </span>
+                <span className={`font-semibold ${chartData[chartData.length - 1].macd > chartData[chartData.length - 1].macdSignal ? 'text-green-500' : 'text-red-500'}`}>
+                  {chartData[chartData.length - 1].macd > chartData[chartData.length - 1].macdSignal ? 'BUY' : 'SELL'}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
