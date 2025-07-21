@@ -13,9 +13,13 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Fetching M2 Global data from bitcoincounterflow API...');
+    console.log('Fetching Bitcoin TVL data from DefiLlama API...');
     
-    const response = await fetch('https://api.bitcoincounterflow.com/api/m2-global');
+    const response = await fetch('https://api.llama.fi/v2/historicalChainTvl/Bitcoin', {
+      headers: {
+        'Accept': '*/*'
+      }
+    });
     
     if (!response.ok) {
       console.error(`API request failed with status: ${response.status}`);
@@ -23,17 +27,15 @@ serve(async (req) => {
     }
     
     const data = await response.json();
-    console.log(`Successfully fetched ${data.length} M2 data points`);
+    console.log(`Successfully fetched ${data.length} Bitcoin TVL data points`);
     
-    // Process the data to extract only what we need
+    // Process the data to convert Unix timestamps to ISO dates and extract TVL
     const processedData = data.map((item: any) => ({
-      date: item.date,
-      m2Supply: item.m2Supply,
-      btcPrice: item.btcPrice,
-      yoyGrowth: item.yoyGrowth
+      date: new Date(item.date * 1000).toISOString().split('T')[0], // Convert Unix timestamp to YYYY-MM-DD
+      tvl: item.tvl
     }));
     
-    console.log(`Returning ${processedData.length} processed M2 data points`);
+    console.log(`Returning ${processedData.length} processed Bitcoin TVL data points`);
     
     return new Response(
       JSON.stringify(processedData),
@@ -45,11 +47,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error fetching M2 data:', error);
+    console.error('Error fetching Bitcoin TVL data:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to fetch M2 data', 
+        error: 'Failed to fetch Bitcoin TVL data', 
         details: error.message 
       }),
       {

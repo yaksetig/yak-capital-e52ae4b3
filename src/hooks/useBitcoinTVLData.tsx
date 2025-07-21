@@ -3,20 +3,20 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface M2DataPoint {
+interface TVLDataPoint {
   date: string;
-  m2Supply: number;
+  tvl: number;
 }
 
-interface M2ApiResponse {
+interface TVLApiResponse {
   date: string;
-  tvl: number; // Changed from m2Supply to tvl to match new API
+  tvl: number;
 }
 
-export const useM2GlobalData = () => {
+export const useBitcoinTVLData = () => {
   const { data: rawData, isLoading, error } = useQuery({
-    queryKey: ['m2-global-data'],
-    queryFn: async (): Promise<M2ApiResponse[]> => {
+    queryKey: ['bitcoin-tvl-data'],
+    queryFn: async (): Promise<TVLApiResponse[]> => {
       console.log('Fetching Bitcoin TVL data via Edge Function...');
       
       const { data, error } = await supabase.functions.invoke('fetch-m2-data');
@@ -33,9 +33,9 @@ export const useM2GlobalData = () => {
     refetchOnWindowFocus: false,
   });
 
-  const processedData: M2DataPoint[] = rawData?.map(item => ({
+  const processedData: TVLDataPoint[] = rawData?.map(item => ({
     date: item.date,
-    m2Supply: item.tvl // Map TVL to m2Supply for backward compatibility
+    tvl: item.tvl
   })) || [];
 
   console.log('Processed Bitcoin TVL data:', { count: processedData.length, sample: processedData[0] });
