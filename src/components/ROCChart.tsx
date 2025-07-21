@@ -140,7 +140,6 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
               name="BTC Price" 
               dot={false} 
               isAnimationActive={false}
-              yAxisId="hidden"
               hide={true}
             />
             
