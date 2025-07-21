@@ -1,19 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Stock } from "@/types"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { generateRandomStockData } from "@/lib/utils"
-import { Sparkline } from "@/components/sparkline"
-import { mockData } from "@/data/mock-data"
-import { CandleStickChart } from "@/components/CandleStickChart"
-import { TradingView } from "@/components/TradingView"
-import { RsiChart } from "@/components/RsiChart"
-import { MacdChart } from "@/components/MacdChart"
-import { StochasticChart } from "@/components/StochasticChart"
+import StochasticChart from "@/components/StochasticChart"
 
 interface TradingDashboardProps {
   stockSymbol: string;
@@ -27,6 +17,23 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({ stockSymbol, chartH
   useEffect(() => {
     // Simulate fetching data from an API
     setTimeout(() => {
+      // Generate mock data
+      const mockData = Array.from({ length: 50 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (49 - i));
+        const price = 100 + Math.random() * 50;
+        return {
+          date: date.toISOString(),
+          close: price,
+          high: price + Math.random() * 5,
+          low: price - Math.random() * 5,
+          volume: Math.floor(Math.random() * 1000000),
+          rsi: Math.random() * 100,
+          macd: Math.random() * 2 - 1,
+          signal: Math.random() * 2 - 1,
+          histogram: Math.random() * 1 - 0.5
+        };
+      });
       setData(mockData);
       setLoading(false);
     }, 1000);
@@ -109,16 +116,8 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({ stockSymbol, chartH
           <Skeleton className="w-full rounded-md" style={{ height: chartHeight }} />
         </Card>
         <Card className="col-span-1 p-6 shadow-card border-border">
-          <h2 className="text-xl font-semibold text-foreground mb-2">RSI</h2>
-          <Skeleton className="w-full rounded-md" style={{ height: chartHeight * 0.3 }} />
-        </Card>
-        <Card className="col-span-1 p-6 shadow-card border-border">
-          <h2 className="text-xl font-semibold text-foreground mb-2">MACD</h2>
-          <Skeleton className="w-full rounded-md" style={{ height: chartHeight * 0.3 }} />
-        </Card>
-        <Card className="col-span-1 p-6 shadow-card border-border">
           <h2 className="text-xl font-semibold text-foreground mb-2">Stochastic Oscillator</h2>
-          <Skeleton className="w-full rounded-md" style={{ height: chartHeight * 0.3 }} />
+          <Skeleton className="w-full rounded-md" style={{ height: chartHeight * 0.6 }} />
         </Card>
       </div>
     );
@@ -131,23 +130,35 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({ stockSymbol, chartH
           <div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Price Chart</h2>
             <p className="text-sm text-muted-foreground max-w-2xl">
-              Interactive price chart with volume and average price.
+              Price movement over time.
             </p>
           </div>
         </div>
-        <CandleStickChart chartData={chartData} chartHeight={chartHeight} formatDate={formatDate} />
+        <ResponsiveContainer width="100%" height={chartHeight}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+              dataKey="date" 
+              tickFormatter={(value) => formatDate(value)}
+            />
+            <YAxis />
+            <Tooltip 
+              labelFormatter={(value) => formatDate(value)}
+              formatter={(value: any) => [value?.toFixed(2), 'Price']}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="price" 
+              stroke="hsl(var(--chart-1))" 
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </Card>
 
       <Card className="col-span-1 p-6 shadow-card border-border">
-        <RsiChart chartData={chartData} chartHeight={chartHeight} formatDate={formatDate} />
-      </Card>
-
-      <Card className="col-span-1 p-6 shadow-card border-border">
-        <MacdChart chartData={chartData} chartHeight={chartHeight} formatDate={formatDate} />
-      </Card>
-
-      <Card className="col-span-1 p-6 shadow-card border-border">
-        <StochasticChart chartData={chartData} chartHeight={chartHeight} formatDate={formatDate} />
+        <StochasticChart chartData={chartData} chartHeight={chartHeight * 0.6} formatDate={formatDate} />
       </Card>
     </div>
   );
