@@ -2062,7 +2062,6 @@ const TradingDashboard = () => {
 
         {/* News Section */}
         <NewsSection symbol={symbol} />
-        <NewsSection symbol={symbol} />
           </>
         ) : (
           <>
