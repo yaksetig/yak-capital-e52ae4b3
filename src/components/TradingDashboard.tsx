@@ -1451,6 +1451,48 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
+        {/* Price vs Global Liquidity Chart */}
+        <Card className="p-6 mb-8 shadow-card border-border">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2)</h2>
+            <TimeRangeSelector 
+              selectedRange={timeRange}
+              onRangeChange={setTimeRange}
+            />
+          </div>
+          <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={filteredChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={formatDate}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  domain={yAxisDomain}
+                  tickFormatter={formatPriceShort}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <Tooltip 
+                  formatter={(value, name) => [formatPrice(value), name]}
+                  labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                />
+                <Legend />
+                
+                {/* Only show the price line */}
+                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
         {/* Indicator Charts - Updated to include Z-Score charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* RSI Chart */}
