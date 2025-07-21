@@ -13,6 +13,7 @@ import NewsSection from './NewsSection';
 import CycleProjectionModal from './CycleProjectionModal';
 import MACDChart from './MACDChart';
 import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
+import ROCChart from './ROCChart';
 import StochasticChart from './StochasticChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
@@ -1771,38 +1772,17 @@ const TradingDashboard = () => {
             </div>
            </Card>
 
-          {/* ROC Chart */}
-          <Card className="p-6 shadow-card border-border">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-foreground">ROC (20) - Last 20 Days</h2>
-            </div>
-            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData.slice(-20)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
-                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis domain={[-200, 200]} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'ROC (20)']}
-                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--foreground))'
-                    }}
-                  />
-                  <ReferenceLine y={100} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
-                  <ReferenceLine y={-100} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
-                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
-                  <Line type="monotone" dataKey="roc" stroke="hsl(var(--accent))" strokeWidth={2} name="ROC (20)" dot={false} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
           {/* Time Series Momentum Chart */}
           <TimeSeriesMomentumChart
+            chartData={chartData}
+            chartHeight={chartHeight}
+            formatDate={formatDate}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+          />
+
+          {/* ROC Chart */}
+          <ROCChart
             chartData={chartData}
             chartHeight={chartHeight}
             formatDate={formatDate}
