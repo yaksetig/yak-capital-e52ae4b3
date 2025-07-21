@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot } from 'lucide-react';
+import AIRecommendationSection from './AIRecommendationSection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InfoCard from './InfoCard';
@@ -30,6 +30,7 @@ const TradingDashboard = () => {
   const [timeRange, setTimeRange] = useState('60');
   const [showEducation, setShowEducation] = useState(false);
   const [selectedCycleModal, setSelectedCycleModal] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'technical' | 'ai-trade'>('technical');
 
   // Chart zoom and display controls
   const [yAxisPadding, setYAxisPadding] = useState(10);
@@ -1490,32 +1491,33 @@ const TradingDashboard = () => {
           </Card>
         </div>
 
-        {/* AI Trade of the Day Navigation */}
-        <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <Bot className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">AI Trade of the Day</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get AI-powered trading recommendations based on comprehensive market analysis
-                  </p>
-                </div>
-              </div>
-              <Link to="/ai-trade">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Brain className="h-4 w-4 mr-2" />
-                  View AI Trade
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
+        {/* View Switcher */}
+        <div className="mb-8 flex justify-center">
+          <div className="bg-muted rounded-lg p-1 inline-flex">
+            <Button
+              variant={currentView === 'technical' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('technical')}
+              className={currentView === 'technical' ? 'bg-background shadow-sm' : ''}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Technical Analysis
+            </Button>
+            <Button
+              variant={currentView === 'ai-trade' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('ai-trade')}
+              className={currentView === 'ai-trade' ? 'bg-background shadow-sm' : ''}
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              AI Trade of the Day
+            </Button>
           </div>
-        </Card>
+        </div>
 
+        {/* Conditional Content Based on Current View */}
+        {currentView === 'technical' ? (
+          <>
         {/* Chart Controls */}
         <ChartControls
           yAxisPadding={yAxisPadding}
@@ -2057,6 +2059,157 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
+
+        {/* News Section */}
+        <NewsSection symbol={symbol} />
+          </>
+        ) : (
+          <>
+        {/* AI Trade of the Day View */}
+        <div className="space-y-6">
+          {/* Hero Header */}
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-3">
+              <div className="p-3 bg-primary/10 rounded-full">
+                <Bot className="h-8 w-8 text-primary" />
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                AI Trade of the Day
+              </h1>
+            </div>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Get AI-powered trading insights and recommendations based on advanced market analysis and technical indicators.
+            </p>
+          </div>
+
+          {/* Market Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <div className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Current Price</p>
+                    <p className="text-lg font-semibold">${indicators.currentPrice ? indicators.currentPrice.toLocaleString() : 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">RSI</p>
+                    <p className="text-lg font-semibold">{indicators.rsi ? indicators.rsi.toFixed(0) : 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Market Sentiment</p>
+                    <p className="text-lg font-semibold">
+                      {fearGreedData?.value_classification || 'Neutral'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* AI Recommendation - Main Feature */}
+          <AIRecommendationSection 
+            symbol={symbol} 
+            marketData={{
+              price: indicators.currentPrice,
+              change: rawData.length >= 2 ? ((rawData[rawData.length - 1]?.close - rawData[rawData.length - 2]?.close) / rawData[rawData.length - 2]?.close * 100) : 0,
+              rsi: indicators.rsi,
+              macd: indicators.macdSignal > 0 ? 'Bullish' : 'Bearish',
+              fearGreed: fearGreedData?.value ? parseInt(fearGreedData.value) : undefined,
+              rank: fearGreedData?.value_classification === 'Extreme Fear' ? 1 : undefined,
+              maStatus: indicators.currentPrice > indicators.sma200 ? 'Above SMA200' : 'Below SMA200',
+              volume: 'Analyzing current levels',
+              levels: 'Analyzing current levels'
+            }}
+          />
+
+          {/* Additional Context */}
+          <Card>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                How Our AI Works
+              </h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Technical Analysis</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Our AI analyzes multiple technical indicators including RSI, MACD, moving averages, 
+                      and volume patterns to identify trading opportunities.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Market Sentiment</h4>
+                    <p className="text-sm text-muted-foreground">
+                      We incorporate market sentiment data, fear & greed index, and social signals 
+                      to provide comprehensive market context.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Risk Assessment</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Each recommendation includes a confidence score and risk analysis to help you 
+                      make informed trading decisions.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Real-time Updates</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Our analysis is updated regularly throughout the day to reflect changing 
+                      market conditions and new data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Disclaimer */}
+          <Card className="border-yellow-200 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-900/10">
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-1 bg-yellow-100 dark:bg-yellow-900/30 rounded">
+                  <Activity className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                    Important Disclaimer
+                  </h4>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    This AI analysis is for educational and informational purposes only. It is not financial advice. 
+                    Cryptocurrency trading involves substantial risk of loss. Always conduct your own research and 
+                    consider your risk tolerance before making any investment decisions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+          </>
+        )}
 
         {/* News Section */}
         <NewsSection symbol={symbol} />
