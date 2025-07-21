@@ -1746,7 +1746,36 @@ const TradingDashboard = () => {
           {/* CCI Chart */}
           <Card className="p-6 shadow-card border-border">
             <div className="mb-4">
-              <h2 className="text-xl font-semibold text-foreground">CCI (20) - Last 20 Days</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-2">CCI (20) - Last 20 Days</h2>
+              <p className="text-sm text-muted-foreground">
+                A momentum-based technical indicator used to identify overbought and oversold conditions in a market. It measures the deviation of an asset's price from its average price over a specific period, typically 20 periods. CCI can be used to spot potential trend changes, reversals, and the strength of existing trends.
+              </p>
+              
+              {/* CCI Status and Recommendation */}
+              {chartData.length > 0 && chartData[chartData.length - 1].cci !== null && (
+                <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Current CCI: </span>
+                    <span className={`font-semibold ${
+                      chartData[chartData.length - 1].cci > 100 ? 'text-red-600' : 
+                      chartData[chartData.length - 1].cci < -100 ? 'text-green-600' : 
+                      'text-yellow-600'
+                    }`}>
+                      {chartData[chartData.length - 1].cci.toFixed(2)}
+                    </span>
+                    <span className="text-muted-foreground ml-4">Signal: </span>
+                    <span className={`font-semibold ${
+                      chartData[chartData.length - 1].cci > -100 && chartData[chartData.length - 1].cci <= 100 ? 'text-green-600' : 
+                      chartData[chartData.length - 1].cci > 100 ? 'text-red-600' : 
+                      'text-yellow-600'
+                    }`}>
+                      {chartData[chartData.length - 1].cci > -100 && chartData[chartData.length - 1].cci <= 100 ? 'BUY' : 
+                       chartData[chartData.length - 1].cci > 100 ? 'SELL' : 
+                       'OVERSOLD'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
