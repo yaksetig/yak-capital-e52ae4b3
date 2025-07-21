@@ -110,7 +110,7 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
               formatter={(value, name) => {
                 if (name === 'BTC Price') {
                   return [`$${Number(value).toLocaleString()}`, name];
-                } else if (name === `ROC (${period})`}) {
+                } else if (name === `ROC (${period})`) {
                   return [`${Number(value).toFixed(2)}%`, name];
                 }
                 return [value, name];
