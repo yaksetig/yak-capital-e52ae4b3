@@ -38,10 +38,11 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData, chartHeight, formatDat
                     
                     return [
                       <div key="macd-tooltip">
+                        <div>Date: {formatDate(currentData.date)}</div>
                         <div>MACD: {macdValue.toFixed(4)}</div>
                         <div>Signal: {signalValue.toFixed(4)}</div>
                         <div style={{ color: recommendationColor, fontWeight: 'bold', marginTop: '4px' }}>
-                          {recommendation}
+                          Recommendation: {recommendation}
                         </div>
                       </div>,
                       ''
