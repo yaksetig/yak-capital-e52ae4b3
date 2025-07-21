@@ -1293,27 +1293,28 @@ const TradingDashboard = () => {
               <StatisticsIcon className="w-4 h-4 text-chart-2" />
               <UITooltip>
                 <TooltipTrigger>
-                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Volume Z-Score</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground cursor-help">Fear & Greed Index</h3>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-sm">Measures how far current volume deviates from 30-day average. High values indicate strong interest/breakouts.</p>
+                  <p className="text-sm">Bitcoin Fear & Greed Index shows market sentiment. 0-24: Extreme Fear, 25-49: Fear, 50-74: Greed, 75-100: Extreme Greed</p>
                 </TooltipContent>
               </UITooltip>
             </div>
             <div className="flex items-center gap-2">
-              <p className={`text-xl font-bold ${
-                (indicators.volumeZScore || 0) > 2 ? 'text-bullish' : 
-                (indicators.volumeZScore || 0) > 1 ? 'text-neutral' : 
-                (indicators.volumeZScore || 0) < -1 ? 'text-bearish' : 'text-muted-foreground'
-              }`}>
-                {indicators.volumeZScore ? indicators.volumeZScore.toFixed(2) : 'N/A'}
+              <p className="text-xl font-bold text-foreground">
+                {fearGreedData?.value || 'N/A'}
               </p>
               <span className={`text-sm font-medium ${
-                (indicators.volumeZScore || 0) > 2 ? 'text-bullish' : 
-                (indicators.volumeZScore || 0) > 1 ? 'text-neutral' : 
-                (indicators.volumeZScore || 0) < -1 ? 'text-bearish' : 'text-muted-foreground'
+                !fearGreedData ? 'text-muted-foreground' :
+                fearGreedData.value_classification === 'Extreme Fear' ? 'text-red-500' :
+                fearGreedData.value_classification === 'Fear' ? 'text-orange-500' :
+                fearGreedData.value_classification === 'Greed' ? 'text-green-500' :
+                fearGreedData.value_classification === 'Extreme Greed' ? 'text-emerald-500' :
+                'text-neutral'
               }`}>
-                {indicators.volumeZScoreSignal}
+                {fearGreedLoading ? 'Loading...' : 
+                 fearGreedError ? 'Error' :
+                 fearGreedData?.value_classification || 'N/A'}
               </span>
             </div>
           </Card>
