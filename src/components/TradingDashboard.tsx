@@ -119,7 +119,7 @@ const TradingDashboard: React.FC = () => {
     change: 2.5,
     rsi: currentData?.rsi,
     macd: currentData?.macd > currentData?.macdSignal ? 'Bullish' : 'Bearish',
-    fearGreed: fearGreedData?.value,
+    fearGreed: fearGreedData?.value ? parseInt(fearGreedData.value, 10) : 0,
     rank: 1,
     maStatus: 'Above 20MA',
     volume: 'High',
@@ -189,7 +189,7 @@ const TradingDashboard: React.FC = () => {
             <AIInsightsTab
               symbol={symbol}
               marketData={aiMarketData}
-              fearGreedData={fearGreedData}
+              fearGreedData={fearGreedData ? { value: parseInt(fearGreedData.value, 10), classification: 'Unknown', timestamp: new Date().toISOString() } : undefined}
             />
           </TabsContent>
 

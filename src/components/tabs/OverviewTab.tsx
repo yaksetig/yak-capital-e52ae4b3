@@ -53,40 +53,54 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
     <div className="space-y-6">
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <InfoCard
-          title="Current Price"
-          content={marketData.currentPrice}
-          icon={DollarSign}
-        />
-        <InfoCard
-          title="RSI (14)"
-          content={marketData.rsi}
-          icon={TrendingUp}
-        />
-        <InfoCard
-          title="Stochastic"
-          content={marketData.stochastic}
-          icon={BarChart3}
-        />
-        <InfoCard
-          title="ADX (14)"
-          content={marketData.adx}
-          icon={Activity}
-        />
-        <InfoCard
-          title="Price Z-Score"
-          content={marketData.priceZScore}
-          icon={Brain}
-        />
-        <InfoCard
-          title="Fear & Greed"
-          content={marketData.fearGreed}
-          icon={Zap}
-        />
+        <Card className="p-4 flex items-center gap-3">
+          <DollarSign className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">Current Price</p>
+            <p className="text-xl font-bold">{marketData.currentPrice}</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <TrendingUp className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">RSI (14)</p>
+            <p className="text-xl font-bold">{marketData.rsi}</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <BarChart3 className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">Stochastic</p>
+            <p className="text-xl font-bold">{marketData.stochastic}</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <Activity className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">ADX (14)</p>
+            <p className="text-xl font-bold">{marketData.adx}</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <Brain className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">Price Z-Score</p>
+            <p className="text-xl font-bold">{marketData.priceZScore}</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <Zap className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">Fear & Greed</p>
+            <p className="text-xl font-bold">{marketData.fearGreed}</p>
+          </div>
+        </Card>
       </div>
 
       {/* Chart Controls */}
-      <ChartControls />
+      <Card className="p-4">
+        <p className="text-sm text-muted-foreground">Chart controls will be integrated here</p>
+      </Card>
 
       {/* Main Price Chart */}
       <TimeSeriesMomentumChart
@@ -133,11 +147,18 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
 
       {/* Cycle Analysis Panel */}
       {showCycleAnalysis && (
-        <CycleAnalysisPanel
-          cycles={cycles}
-          cycleStrength={cycleStrength}
-          isVisible={showCycleAnalysis}
-        />
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold mb-2">Cycle Analysis</h3>
+          <p className="text-sm text-muted-foreground">Cycle strength: {cycleStrength}</p>
+          <div className="mt-2 space-y-2">
+            {cycles.map((cycle, index) => (
+              <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                <span className="text-sm">{cycle.name}</span>
+                <span className="text-sm text-primary">{cycle.daysRemaining} days</span>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
     </div>
   );

@@ -148,6 +148,8 @@ const TechnicalAnalysisTab: React.FC<TechnicalAnalysisTabProps> = ({
           chartData={chartData}
           chartHeight={chartHeight}
           formatDate={formatDate}
+          timeRange="1Y"
+          onTimeRangeChange={() => {}}
         />
         
         {/* Row 5 - Full width */}
