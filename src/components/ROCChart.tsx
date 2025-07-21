@@ -1,5 +1,5 @@
 import React from 'react';
-import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
+import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card } from '@/components/ui/card';
 import TimeRangeSelector from './TimeRangeSelector';
 
@@ -12,9 +12,9 @@ interface ROCChartProps {
 }
 
 const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate, timeRange, onTimeRangeChange }) => {
-  // Calculate ROC (Rate of Change) - using 20 periods
+  // Calculate current ROC for display in info box
   const period = 20;
-  let roc = 0;
+  let currentROC = 0;
   let isPositive = false;
   
   if (chartData.length >= period + 1) {
@@ -22,8 +22,8 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
     const nDaysAgoPrice = chartData[chartData.length - 1 - period].price;
     
     if (nDaysAgoPrice !== 0) {
-      roc = ((todayPrice - nDaysAgoPrice) / nDaysAgoPrice) * 100;
-      isPositive = roc > 0;
+      currentROC = ((todayPrice - nDaysAgoPrice) / nDaysAgoPrice) * 100;
+      isPositive = currentROC > 0;
     }
   }
 
@@ -31,23 +31,23 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
     <Card className="p-6 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">ROC</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">ROC vs Price</h2>
           <p className="text-sm text-muted-foreground">
-            Bitcoin price movement over time showing the rate of change and trend direction.
+            Rate of Change (20-period) compared with Bitcoin price movement.
           </p>
           
           {/* ROC Calculation */}
           <div className="mt-3 p-3 bg-muted/50 rounded-lg">
             <div className="text-sm">
-              <span className="text-muted-foreground">ROC: </span>
+              <span className="text-muted-foreground">Current ROC (20): </span>
               <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {roc.toFixed(2)}%
+                {currentROC.toFixed(2)}%
               </span>
             </div>
             <div className="text-sm mt-1">
-              <span className="text-muted-foreground">Recommendation: </span>
+              <span className="text-muted-foreground">Signal: </span>
               <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {isPositive ? 'BUY' : 'SELL'}
+                {isPositive ? 'Bullish' : 'Bearish'}
               </span>
             </div>
           </div>
@@ -63,26 +63,33 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
             <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
-            <YAxis stroke="hsl(var(--muted-foreground))" />
+            
+            {/* Left Y-axis for Price */}
+            <YAxis 
+              yAxisId="price" 
+              orientation="left" 
+              stroke="hsl(var(--primary))" 
+              label={{ value: 'Price ($)', angle: -90, position: 'insideLeft' }}
+            />
+            
+            {/* Right Y-axis for ROC */}
+            <YAxis 
+              yAxisId="roc" 
+              orientation="right" 
+              stroke="hsl(var(--accent))" 
+              label={{ value: 'ROC (%)', angle: 90, position: 'insideRight' }}
+            />
+            
             <Tooltip 
-              formatter={() => [null, null]}
-              labelFormatter={(label, payload) => {
-                if (!payload || payload.length === 0) return '';
-                
-                const data = payload[0]?.payload;
-                if (!data) return '';
-                
-                const priceValue = data.price;
-                
-                if (priceValue === null || priceValue === undefined) return '';
-                
-                return (
-                  <div style={{ color: 'hsl(var(--foreground))' }}>
-                    <div>Date: {formatDate(label)}</div>
-                    <div style={{ color: 'hsl(var(--primary))' }}>Price: ${priceValue.toLocaleString()}</div>
-                  </div>
-                );
+              formatter={(value, name) => {
+                if (name === 'BTC Price') {
+                  return [`$${Number(value).toLocaleString()}`, name];
+                } else if (name === 'ROC (20)') {
+                  return [`${Number(value).toFixed(2)}%`, name];
+                }
+                return [value, name];
               }}
+              labelFormatter={(label) => `Date: ${formatDate(label)}`}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
@@ -90,31 +97,37 @@ const ROCChart: React.FC<ROCChartProps> = ({ chartData, chartHeight, formatDate,
                 color: 'hsl(var(--foreground))'
               }}
             />
-            <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={3} name="BTC Price" dot={false} isAnimationActive={false} />
             
-            {/* First point marker */}
-            {chartData.length > 0 && (
-              <ReferenceDot 
-                x={chartData[0].date} 
-                y={chartData[0].price} 
-                r={6} 
-                fill="#ef4444" 
-                stroke="#dc2626" 
-                strokeWidth={2}
-              />
-            )}
+            <Legend />
             
-            {/* Last point marker */}
-            {chartData.length > 1 && (
-              <ReferenceDot 
-                x={chartData[chartData.length - 1].date} 
-                y={chartData[chartData.length - 1].price} 
-                r={6} 
-                fill="#ef4444" 
-                stroke="#dc2626" 
-                strokeWidth={2}
-              />
-            )}
+            {/* Reference lines for ROC */}
+            <ReferenceLine yAxisId="roc" y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
+            <ReferenceLine yAxisId="roc" y={10} stroke="hsl(var(--bullish))" strokeDasharray="1 1" opacity={0.5} />
+            <ReferenceLine yAxisId="roc" y={-10} stroke="hsl(var(--bearish))" strokeDasharray="1 1" opacity={0.5} />
+            
+            {/* Price Line */}
+            <Line 
+              yAxisId="price"
+              type="monotone" 
+              dataKey="price" 
+              stroke="hsl(var(--primary))" 
+              strokeWidth={2} 
+              name="BTC Price" 
+              dot={false} 
+              isAnimationActive={false} 
+            />
+            
+            {/* ROC Line */}
+            <Line 
+              yAxisId="roc"
+              type="monotone" 
+              dataKey="roc" 
+              stroke="hsl(var(--accent))" 
+              strokeWidth={2} 
+              name="ROC (20)" 
+              dot={false} 
+              isAnimationActive={false} 
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
