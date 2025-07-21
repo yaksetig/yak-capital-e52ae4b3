@@ -39,6 +39,7 @@ interface ProcessedData extends OhlcData {
   stochK: number | null;
   stochD: number | null;
   roc: number | null;
+  price: number;
   isLive?: boolean;
 }
 
@@ -378,7 +379,7 @@ const TradingDashboard = () => {
         )}
 
         {/* Main Content */}
-        <Tabs defaultvalue="overview" className="w-full space-y-4">
+        <Tabs defaultValue="overview" className="w-full space-y-4">
           <TabsList>
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
@@ -407,9 +408,21 @@ const TradingDashboard = () => {
           </TabsList>
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <InfoCard title="Current Price" value={currentPrice ? `$${currentPrice.toFixed(2)}` : 'Loading...'} icon={TrendingUp} />
-              <InfoCard title="24h Volume" value={`${rawData[rawData.length - 1]?.volume.toFixed(2)} BTC`} icon={BarChart3} />
-              <InfoCard title="RSI (14)" value={processedData[processedData.length - 1]?.rsi ? processedData[processedData.length - 1]?.rsi?.toFixed(2) : 'N/A'} icon={Activity} />
+              <InfoCard 
+                title="Current Price" 
+                shortDescription={currentPrice ? `$${currentPrice.toFixed(2)}` : 'Loading...'}
+                detailedExplanation="Real-time Bitcoin price in USD."
+              />
+              <InfoCard 
+                title="24h Volume" 
+                shortDescription={`${rawData[rawData.length - 1]?.volume.toFixed(2) || 'N/A'} BTC`}
+                detailedExplanation="24-hour trading volume of Bitcoin."
+              />
+              <InfoCard 
+                title="RSI (14)" 
+                shortDescription={processedData[processedData.length - 1]?.rsi ? processedData[processedData.length - 1]?.rsi?.toFixed(2) : 'N/A'}
+                detailedExplanation="Relative Strength Index measures if Bitcoin is overbought (>70) or oversold (<30)."
+              />
             </div>
             <Card className="p-6 shadow-card border-border">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -417,7 +430,7 @@ const TradingDashboard = () => {
                   <h2 className="text-xl font-semibold text-foreground mb-2">Price Chart</h2>
                   <p className="text-sm text-muted-foreground">Bitcoin price over time</p>
                 </div>
-                <ChartControls rocPeriod={rocPeriod} setRocPeriod={setRocPeriod} />
+                <div className="text-sm text-muted-foreground">Chart controls placeholder</div>
               </div>
               <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -443,9 +456,9 @@ const TradingDashboard = () => {
                         <Line type="monotone" dataKey="bollingerLower" stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} isAnimationActive={false} />
                       </>
                     )}
-                    {processedData[processedData.length - 1]?.isLive && (
-                      <ReferenceLine x={formatDate(processedData[processedData.length - 1]?.date)} stroke="hsl(var(--primary))" strokeDasharray="3 3" label="Live" />
-                    )}
+                     {processedData.length > 0 && (processedData[processedData.length - 1] as any)?.isLive && (
+                       <ReferenceLine x={formatDate(processedData[processedData.length - 1]?.date)} stroke="hsl(var(--primary))" strokeDasharray="3 3" label="Live" />
+                     )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -457,18 +470,34 @@ const TradingDashboard = () => {
               <StochasticChart chartData={processedData} chartHeight={chartHeight} formatDate={formatDate} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ROCChart chartData={processedData} chartHeight={chartHeight} formatDate={formatDate} rocPeriod={rocPeriod} />
-              <TimeSeriesMomentumChart chartData={processedData} chartHeight={chartHeight} formatDate={formatDate} />
+              <ROCChart 
+                chartData={processedData} 
+                chartHeight={chartHeight} 
+                formatDate={formatDate} 
+                timeRange={selectedRange}
+                onTimeRangeChange={setSelectedRange}
+              />
+              <TimeSeriesMomentumChart 
+                chartData={processedData} 
+                chartHeight={chartHeight} 
+                formatDate={formatDate}
+                timeRange={selectedRange}
+                onTimeRangeChange={setSelectedRange}
+              />
             </div>
           </TabsContent>
           <TabsContent value="cycle">
-            <CycleAnalysisPanel />
+            <CycleAnalysisPanel 
+              cycles={[]}
+              cycleStrength={0}
+              isVisible={true}
+            />
           </TabsContent>
           <TabsContent value="ai">
-            <AIRecommendationSection />
+            <AIRecommendationSection symbol="BTCUSDT" />
           </TabsContent>
           <TabsContent value="news">
-            <NewsSection />
+            <NewsSection symbol="BTCUSDT" />
           </TabsContent>
           <TabsContent value="settings">
             <Card className="p-6 shadow-card border-border">
