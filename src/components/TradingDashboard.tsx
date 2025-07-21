@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -700,9 +701,10 @@ const TradingDashboard = () => {
       const volume = parseFloat(candle[5]);
       const date = new Date(timestamp);
       
-      const sliceIndex = rawData.length - 60 + index + 1;
-      const pricesUpToThis = prices.slice(0, sliceIndex);
-      const candlesUpToThis = rawData.slice(0, sliceIndex);
+      // Use full historical data for each calculation instead of artificially limiting it
+      const actualIndex = rawData.length - 60 + index;
+      const pricesUpToThis = prices.slice(0, actualIndex + 1);
+      const candlesUpToThis = rawData.slice(0, actualIndex + 1);
       
       const sma20 = calculateSMA(pricesUpToThis, 20);
       const sma50 = calculateSMA(pricesUpToThis, 50);
