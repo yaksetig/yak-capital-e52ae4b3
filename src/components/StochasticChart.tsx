@@ -14,7 +14,7 @@ const StochasticChart: React.FC<StochasticChartProps> = ({ chartData, chartHeigh
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-2">Stochastic Oscillator (14,3)</h2>
-          <p className="text-sm text-muted-foreground max-w-2xl">
+          <p className="text-sm text-muted-foreground">
             The Stochastic Oscillator compares a security's closing price to its price range over a given time period. The %K line represents the current position within the range, while %D is a smoothed version that acts as a signal line.
           </p>
         </div>
