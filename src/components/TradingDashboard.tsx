@@ -726,18 +726,33 @@ const TradingDashboard = () => {
     else marketSentiment = "neutral";
 
     // STEP 2: Now prepare chart data for the selected time window
-    const vwapArray = calculateVWAPArray(rawData.slice(-60));
+    // Convert timeRange to actual number of days to show
+    const getDaysToShow = (timeRange: string) => {
+      switch(timeRange) {
+        case '7': return 7;
+        case '30': return 30;
+        case '60': return 60;
+        case '90': return 90;
+        case 'all': return rawData.length;
+        default: return 60;
+      }
+    };
+    
+    const daysToShow = getDaysToShow(timeRange);
+    const chartDataSlice = rawData.slice(-daysToShow);
+    
+    const vwapArray = calculateVWAPArray(chartDataSlice);
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
     
-    const chartData = rawData.slice(-60).map((candle, index) => {
+    const chartData = chartDataSlice.map((candle, index) => {
       const timestamp = parseInt(candle[0]);
       const price = parseFloat(candle[4]);
       const volume = parseFloat(candle[5]);
       const date = new Date(timestamp);
       
       // Use pre-calculated indicators from the full dataset
-      const fullDataIndex = rawData.length - 60 + index;
+      const fullDataIndex = rawData.length - daysToShow + index;
       
       const sma20 = fullSMA20Array[fullDataIndex];
       const sma50 = fullSMA50Array[fullDataIndex];
@@ -796,8 +811,8 @@ const TradingDashboard = () => {
         stochK: stochArrayPoint ? stochArrayPoint.stochK : null,
         stochD: stochArrayPoint ? stochArrayPoint.stochD : null,
         adx: adxPoint ? adxPoint.adx : null,
-        priceZScore: priceZScoreArray.length > index ? priceZScoreArray[priceZScoreArray.length - 60 + index] : null,
-        volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - 60 + index] : null
+        priceZScore: priceZScoreArray.length > index ? priceZScoreArray[priceZScoreArray.length - daysToShow + index] : null,
+        volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - daysToShow + index] : null
       };
     });
 
