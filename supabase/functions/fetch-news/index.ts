@@ -99,13 +99,49 @@ serve(async (req) => {
     const response = await fetch(url)
     
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API error: ${response.status}`)
+      throw new Error(`Alpha Vantage API error: ${response.status} ${response.statusText}`)
     }
     
     const data = await response.json()
     
+    // Log the actual response for debugging
+    console.log('Alpha Vantage API response:', JSON.stringify(data, null, 2))
+    
     if (!data.feed || !Array.isArray(data.feed)) {
-      throw new Error('Invalid news data format from Alpha Vantage')
+      console.error('Invalid Alpha Vantage response structure:', {
+        hasFeeds: !!data.feed,
+        feedType: typeof data.feed,
+        keys: Object.keys(data),
+        limitReached: data.Information
+      })
+      
+      // Check if it's a rate limit or API limit response
+      if (data.Information && data.Information.includes('call frequency')) {
+        throw new Error('Alpha Vantage API rate limit exceeded. Please try again later.')
+      }
+      
+      // Try alternative ticker formats for crypto
+      if (ticker.toUpperCase() === 'BTC') {
+        console.log('Trying alternative ticker format for BTC...')
+        const altUrl = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=BTC&time_from=${timeFrom}&limit=50&sort=RELEVANCE&apikey=${ALPHA_VANTAGE_API_KEY}`
+        
+        try {
+          const altResponse = await fetch(altUrl)
+          const altData = await altResponse.json()
+          console.log('Alternative ticker response:', JSON.stringify(altData, null, 2))
+          
+          if (altData.feed && Array.isArray(altData.feed)) {
+            data.feed = altData.feed
+          }
+        } catch (altError) {
+          console.error('Alternative ticker request failed:', altError)
+        }
+      }
+      
+      // If still no valid feed, throw error with more details
+      if (!data.feed || !Array.isArray(data.feed)) {
+        throw new Error(`Invalid news data format from Alpha Vantage. Response: ${JSON.stringify(data)}`)
+      }
     }
 
     // Store news articles in database

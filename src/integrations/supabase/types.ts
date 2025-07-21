@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      news_articles: {
+        Row: {
+          authors: string[] | null
+          category_within_source: string | null
+          created_at: string | null
+          id: string
+          overall_sentiment_label: string | null
+          overall_sentiment_score: number | null
+          source: string | null
+          source_domain: string | null
+          summary: string | null
+          ticker: string
+          ticker_sentiment: Json | null
+          time_published: string
+          title: string
+          topics: Json | null
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          authors?: string[] | null
+          category_within_source?: string | null
+          created_at?: string | null
+          id?: string
+          overall_sentiment_label?: string | null
+          overall_sentiment_score?: number | null
+          source?: string | null
+          source_domain?: string | null
+          summary?: string | null
+          ticker: string
+          ticker_sentiment?: Json | null
+          time_published: string
+          title: string
+          topics?: Json | null
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          authors?: string[] | null
+          category_within_source?: string | null
+          created_at?: string | null
+          id?: string
+          overall_sentiment_label?: string | null
+          overall_sentiment_score?: number | null
+          source?: string | null
+          source_domain?: string | null
+          summary?: string | null
+          ticker?: string
+          ticker_sentiment?: Json | null
+          time_published?: string
+          title?: string
+          topics?: Json | null
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
