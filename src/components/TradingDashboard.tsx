@@ -497,6 +497,26 @@ const TradingDashboard = () => {
     return "Neutral";
   };
 
+  // ROC CALCULATION FUNCTIONS
+  // Helper function to calculate ROC array for charting
+  const calculateROCArray = (candles, period) => {
+    if (candles.length < period + 1) return [];
+    
+    const rocArray = [];
+    
+    for (let i = period; i < candles.length; i++) {
+      const todayClose = parseFloat(candles[i][4]);
+      const nDaysAgoClose = parseFloat(candles[i - period][4]);
+      
+      // ROC calculation: ((today's closing - closing price n days ago) / closing price n days ago) * 100
+      const roc = nDaysAgoClose !== 0 ? ((todayClose - nDaysAgoClose) / nDaysAgoClose) * 100 : 0;
+      
+      rocArray.push(roc);
+    }
+    
+    return rocArray;
+  };
+
   // NEW Z-SCORE FUNCTIONS
   const calculateZScore = (values, period) => {
     if (values.length < period) return null;
@@ -876,6 +896,7 @@ const TradingDashboard = () => {
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
     const cciArray = calculateCCIArray(rawData, CCI_PERIOD);
+    const rocArray = calculateROCArray(rawData, CCI_PERIOD); // Using same period as CCI (20)
     
     let chartData = chartDataSlice.map((candle, index) => {
       const timestamp = parseInt(candle[0]);
@@ -924,6 +945,10 @@ const TradingDashboard = () => {
       const cciIndex = fullDataIndex - (CCI_PERIOD - 1);
       const cciValue = cciIndex >= 0 && cciIndex < cciArray.length ? cciArray[cciIndex] : null;
 
+      // ROC for this point
+      const rocIndex = fullDataIndex - CCI_PERIOD; // ROC needs one extra day for calculation
+      const rocValue = rocIndex >= 0 && rocIndex < rocArray.length ? rocArray[rocIndex] : null;
+
       return {
         date: date.toISOString().split('T')[0],
         timestamp: timestamp,
@@ -940,6 +965,7 @@ const TradingDashboard = () => {
         bbLower: bbLow,
         rsi: rsi,
         cci: cciValue,
+        roc: rocValue,
         macd: macd,
         macdSignal: macdSig,
         macdHistogram: macdHist,
@@ -1743,10 +1769,40 @@ const TradingDashboard = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+           </Card>
+
+          {/* ROC Chart */}
+          <Card className="p-6 shadow-card border-border">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-foreground">ROC (20) - Last 20 Days</h2>
+            </div>
+            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData.slice(-20)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis domain={[-200, 200]} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : 'N/A', 'ROC (20)']}
+                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <ReferenceLine y={100} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Overbought" />
+                  <ReferenceLine y={-100} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Oversold" />
+                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" />
+                  <Line type="monotone" dataKey="roc" stroke="hsl(var(--accent))" strokeWidth={2} name="ROC (20)" dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
 
           {/* Time Series Momentum Chart */}
-          <TimeSeriesMomentumChart 
+          <TimeSeriesMomentumChart
             chartData={chartData}
             chartHeight={chartHeight}
             formatDate={formatDate}
