@@ -13,6 +13,7 @@ import CycleAnalysisPanel from './CycleAnalysisPanel';
 import NewsSection from './NewsSection';
 import CycleProjectionModal from './CycleProjectionModal';
 import MACDChart from './MACDChart';
+import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
 import StochasticChart from './StochasticChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
@@ -1485,6 +1486,13 @@ const TradingDashboard = () => {
               </ResponsiveContainer>
             </div>
           </Card>
+
+          {/* Time Series Momentum Chart */}
+          <TimeSeriesMomentumChart 
+            chartData={chartData}
+            chartHeight={chartHeight}
+            formatDate={formatDate}
+          />
 
           {/* MACD Chart - Separated with its own parameters */}
           <MACDChart 
