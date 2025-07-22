@@ -1426,34 +1426,7 @@ const TradingDashboard = () => {
         {/* Conditional Content Based on Current View */}
         {currentView === 'overview' ? (
           <>
-            {/* Chart Controls */}
-            <ChartControls
-              yAxisPadding={yAxisPadding}
-              onYAxisPaddingChange={handleYAxisPaddingChange}
-              autoFit={autoFit}
-              onAutoFitChange={handleAutoFitChange}
-              minPrice={manualPriceRange.min}
-              maxPrice={manualPriceRange.max}
-              onPriceRangeChange={handlePriceRangeChange}
-              chartHeight={chartHeight}
-              onChartHeightChange={setChartHeight}
-              visibleLines={visibleLines}
-              onLineVisibilityChange={handleLineVisibilityChange}
-              showCycleAnalysis={showCycleAnalysis}
-              onCycleAnalysisChange={setShowCycleAnalysis}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
-              onResetZoom={handleResetZoom}
-              onFocusRecent={handleFocusRecent}
-            />
-
-            <CycleAnalysisPanel
-              cycles={cycles}
-              cycleStrength={cycleStrength}
-              isVisible={showCycleAnalysis}
-            />
-
-            {/* Main Price Chart */}
+            {/* Main Price Chart with Controls */}
             <Card className="p-6 mb-8 shadow-card border-border">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <h2 className="text-xl font-semibold text-foreground">Price Chart with Technical Indicators</h2>
@@ -1462,6 +1435,33 @@ const TradingDashboard = () => {
                   onRangeChange={setTimeRange}
                 />
               </div>
+              
+              {/* Chart Controls */}
+              <ChartControls
+                yAxisPadding={yAxisPadding}
+                onYAxisPaddingChange={handleYAxisPaddingChange}
+                autoFit={autoFit}
+                onAutoFitChange={handleAutoFitChange}
+                minPrice={manualPriceRange.min}
+                maxPrice={manualPriceRange.max}
+                onPriceRangeChange={handlePriceRangeChange}
+                chartHeight={chartHeight}
+                onChartHeightChange={setChartHeight}
+                visibleLines={visibleLines}
+                onLineVisibilityChange={handleLineVisibilityChange}
+                showCycleAnalysis={showCycleAnalysis}
+                onCycleAnalysisChange={setShowCycleAnalysis}
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                onResetZoom={handleResetZoom}
+                onFocusRecent={handleFocusRecent}
+              />
+
+              <CycleAnalysisPanel
+                cycles={cycles}
+                cycleStrength={cycleStrength}
+                isVisible={showCycleAnalysis}
+              />
               <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={filteredChartData}>
