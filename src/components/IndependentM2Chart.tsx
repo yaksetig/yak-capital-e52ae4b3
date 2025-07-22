@@ -149,12 +149,12 @@ const IndependentM2Chart = () => {
                 yAxisId="m2"
                 type="monotone" 
                 dataKey="m2Supply" 
-                stroke="hsl(var(--chart-2))" 
-                strokeWidth={2} 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={3} 
                 name="M2 Supply" 
                 dot={false} 
                 isAnimationActive={false}
-                connectNulls={false}
+                connectNulls={true}
               />
             )}
           </ComposedChart>
