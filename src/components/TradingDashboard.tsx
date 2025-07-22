@@ -67,7 +67,12 @@ const TradingDashboard = () => {
   const { data: tvlData, loading: tvlLoading, error: tvlError } = useBitcoinTVLData();
 
   // Configuration
-  const LOOKBACK_DAYS = 201;
+  // Number of historical candles to fetch.
+  // This value needs to be larger than the longest moving average period
+  // plus the largest time range we want to display so that long SMAs like
+  // the 200-day average have enough data for the full chart window.
+  // Using one year of data provides enough history for all views.
+  const LOOKBACK_DAYS = 365;
   const SMA_PERIODS = [5, 20, 50, 100, 200];
   const EMA_PERIODS = [5, 20, 50, 100, 200];
   const BB_PERIOD = 20;
