@@ -17,6 +17,7 @@ import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
 import ROCChart from './ROCChart';
 import StochasticChart from './StochasticChart';
 import IndependentM2Chart from './IndependentM2Chart';
+import PriceVolumeChart from './PriceVolumeChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
@@ -1656,6 +1657,13 @@ const TradingDashboard = () => {
             </ResponsiveContainer>
           </div>
         </Card>
+
+        <PriceVolumeChart
+          chartData={filteredChartData}
+          chartHeight={chartHeight}
+          formatDate={formatDate}
+          formatPriceShort={formatPriceShort}
+        />
 
         <IndependentM2Chart />
 
