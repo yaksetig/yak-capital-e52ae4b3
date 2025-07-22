@@ -14,14 +14,14 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Fetching M2 Supply data from Supabase database...');
+    console.log('Fetching M2 Supply and Bitcoin price data from Supabase database...');
     
     // Create Supabase client using environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
     
-    // Call the existing database function to get M2 supply data
+    // Call the updated database function to get M2 supply and Bitcoin price data
     const { data, error } = await supabase.rpc('get_m2_supply_data');
     
     if (error) {
@@ -29,15 +29,16 @@ serve(async (req) => {
       throw new Error(`Database error: ${error.message}`);
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} M2 supply data points`);
+    console.log(`Successfully fetched ${data?.length || 0} M2 supply and Bitcoin price data points`);
     
     // Process the data to match expected format
     const processedData = data?.map((item: any) => ({
       date: new Date(item.date).toISOString().split('T')[0], // Convert to YYYY-MM-DD
-      m2Supply: item.m2_supply
+      m2Supply: item.m2_supply,
+      btcPrice: item.btc_price
     })) || [];
     
-    console.log(`Returning ${processedData.length} processed M2 supply data points`);
+    console.log(`Returning ${processedData.length} processed M2 supply and Bitcoin price data points`);
     
     return new Response(
       JSON.stringify(processedData),
@@ -49,11 +50,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error fetching M2 supply data:', error);
+    console.error('Error fetching M2 supply and Bitcoin price data:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to fetch M2 supply data', 
+        error: 'Failed to fetch M2 supply and Bitcoin price data', 
         details: error.message 
       }),
       {

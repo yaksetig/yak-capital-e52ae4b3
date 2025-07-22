@@ -1,74 +1,36 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import TimeRangeSelector from './TimeRangeSelector';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
 
-// Independent price data fetching from Binance (separate from main dashboard)
-const useBinancePriceData = () => {
-  const [priceData, setPriceData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const fetchPriceData = async (timeRange: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Calculate limit based on timeRange
-      let limit = 60; // default
-      switch(timeRange) {
-        case '7': limit = 7; break;
-        case '30': limit = 30; break;
-        case '60': limit = 60; break;
-        case '90': limit = 90; break;
-        case 'all': limit = 1000; break;
-        default: limit = 60;
-      }
-
-      const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=${limit}`);
-      const data = await response.json();
-      
-      const formattedData = data.map(candle => ({
-        date: new Date(candle[0]).toISOString().split('T')[0],
-        price: parseFloat(candle[4]) // Close price
-      }));
-      
-      setPriceData(formattedData);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { priceData, loading, error, fetchPriceData };
-};
-
 const IndependentM2Chart = () => {
   const [timeRange, setTimeRange] = useState('60');
   const [chartHeight] = useState(400);
   
-  // Independent data sources
-  const { priceData, loading: priceLoading, error: priceError, fetchPriceData } = useBinancePriceData();
-  const { data: m2Data, loading: m2Loading, error: m2Error } = useM2GlobalData();
+  // Get unified data from Supabase
+  const { data: allData, loading, error } = useM2GlobalData();
 
-  // Fetch price data when timeRange changes
-  React.useEffect(() => {
-    fetchPriceData(timeRange);
-  }, [timeRange]);
+  // Filter data based on selected time range
+  const chartData = useMemo(() => {
+    if (!allData.length) return [];
 
-  // Combine price and M2 data independently
-  const chartData = React.useMemo(() => {
-    if (!priceData.length || !m2Data.length) return [];
+    // If "all" is selected, return all data
+    if (timeRange === 'all') {
+      return allData;
+    }
 
-    const m2Map = new Map(m2Data.map(item => [item.date, item.m2Supply]));
+    // Filter by number of days
+    const days = parseInt(timeRange);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
     
-    return priceData.map(priceItem => ({
-      date: priceItem.date,
-      price: priceItem.price,
-      m2Supply: m2Map.get(priceItem.date) || null
-    }));
-  }, [priceData, m2Data]);
+    return allData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= cutoffDate;
+    });
+  }, [allData, timeRange]);
 
   const formatPrice = (value) => `$${value.toLocaleString()}`;
   const formatM2Supply = (value) => `$${(value / 1e12).toFixed(1)}T`;
@@ -78,8 +40,8 @@ const IndependentM2Chart = () => {
     <Card className="p-6 mb-8 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2) - Independent</h2>
-          {(priceLoading || m2Loading) && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
+          <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2) - Complete Historical Data</h2>
+          {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
         </div>
         <TimeRangeSelector 
           selectedRange={timeRange}
@@ -87,11 +49,10 @@ const IndependentM2Chart = () => {
         />
       </div>
       
-      {(priceError || m2Error) && (
+      {error && (
         <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
           <p className="text-sm text-destructive">
-            {priceError && `Price data error: ${priceError.message}`}
-            {m2Error && `M2 data error: ${m2Error.message}`}
+            Error loading data: {error.message}
           </p>
         </div>
       )}
@@ -120,7 +81,7 @@ const IndependentM2Chart = () => {
             />
             <Tooltip 
               formatter={(value, name) => {
-                if (name === 'Price') return [formatPrice(Number(value)), name];
+                if (name === 'Bitcoin Price') return [formatPrice(Number(value)), name];
                 if (name === 'M2 Supply') return [formatM2Supply(Number(value)), name];
                 return [value, name];
               }}
@@ -137,27 +98,24 @@ const IndependentM2Chart = () => {
             <Line 
               yAxisId="price"
               type="monotone" 
-              dataKey="price" 
+              dataKey="btcPrice" 
               stroke="hsl(var(--foreground))" 
               strokeWidth={3} 
-              name="Price" 
+              name="Bitcoin Price" 
               dot={false} 
               isAnimationActive={false} 
             />
             
-            {chartData.some(d => d.m2Supply) && (
-              <Line 
-                yAxisId="m2"
-                type="monotone" 
-                dataKey="m2Supply" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={3} 
-                name="M2 Supply" 
-                dot={false} 
-                isAnimationActive={false}
-                connectNulls={true}
-              />
-            )}
+            <Line 
+              yAxisId="m2"
+              type="monotone" 
+              dataKey="m2Supply" 
+              stroke="hsl(var(--primary))" 
+              strokeWidth={3} 
+              name="M2 Supply" 
+              dot={false} 
+              isAnimationActive={false}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
