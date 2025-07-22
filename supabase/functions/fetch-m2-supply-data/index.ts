@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const isDev = Deno.env.get('NODE_ENV') === 'development';
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,7 +16,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Fetching M2 Supply and Bitcoin price data from Supabase database...');
+    if (isDev) {
+      console.log('Fetching M2 Supply and Bitcoin price data from Supabase database...');
+    }
     
     // Create Supabase client using environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -29,7 +33,9 @@ serve(async (req) => {
       throw new Error(`Database error: ${error.message}`);
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} M2 supply and Bitcoin price data points`);
+    if (isDev) {
+      console.log(`Successfully fetched ${data?.length || 0} M2 supply and Bitcoin price data points`);
+    }
     
     // Process the data to match expected format
     const processedData = data?.map((item: any) => ({
@@ -38,7 +44,9 @@ serve(async (req) => {
       btcPrice: item.btc_price
     })) || [];
     
-    console.log(`Returning ${processedData.length} processed M2 supply and Bitcoin price data points`);
+    if (isDev) {
+      console.log(`Returning ${processedData.length} processed M2 supply and Bitcoin price data points`);
+    }
     
     return new Response(
       JSON.stringify(processedData),
