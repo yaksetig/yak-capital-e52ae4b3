@@ -1535,7 +1535,7 @@ const TradingDashboard = () => {
         <Card className="p-6 mb-8 shadow-card border-border">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-foreground">Price vs M2 Supply</h2>
+              <h2 className="text-xl font-semibold text-foreground">Price vs TVL</h2>
               {m2Loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
             </div>
             <TimeRangeSelector 
@@ -1575,7 +1575,7 @@ const TradingDashboard = () => {
                 <Tooltip 
                   formatter={(value, name) => {
                     if (name === 'Price') return [formatPrice(Number(value)), name];
-                    if (name === 'M2 Supply') return [formatM2Supply(Number(value)), name];
+                    if (name === 'TVL') return [formatM2Supply(Number(value)), name];
                     return [value, name];
                   }}
                   labelFormatter={(label) => `Date: ${formatDate(label)}`}
@@ -1606,7 +1606,7 @@ const TradingDashboard = () => {
                     dataKey="m2Supply" 
                     stroke="hsl(var(--chart-2))" 
                     strokeWidth={2} 
-                    name="M2 Supply"
+                    name="TVL" 
                     dot={false} 
                     isAnimationActive={false}
                     connectNulls={false}
@@ -1661,7 +1661,7 @@ const TradingDashboard = () => {
                 <Tooltip 
                   formatter={(value, name) => {
                     if (name === 'Price') return [formatPrice(Number(value)), name];
-                    if (name === 'M2 Supply') return [formatM2Supply(Number(value)), name];
+                    if (name === 'TVL') return [formatM2Supply(Number(value)), name];
                     return [value, name];
                   }}
                   labelFormatter={(label) => `Date: ${formatDate(label)}`}
@@ -1692,7 +1692,7 @@ const TradingDashboard = () => {
                     dataKey="m2Supply" 
                     stroke="hsl(var(--chart-2))" 
                     strokeWidth={2} 
-                    name="M2 Supply" 
+                    name="TVL" 
                     dot={false} 
                     isAnimationActive={false}
                     connectNulls={false}
