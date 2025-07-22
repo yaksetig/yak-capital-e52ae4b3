@@ -4,8 +4,8 @@ import { Card } from '@/components/ui/card';
 import TimeRangeSelector from './TimeRangeSelector';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
 
-// Independent price data fetching (separate from main dashboard)
-const usePriceData = () => {
+// Independent price data fetching from Binance (separate from main dashboard)
+const useBinancePriceData = () => {
   const [priceData, setPriceData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,12 +14,23 @@ const usePriceData = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${timeRange === 'all' ? 'max' : timeRange}&interval=daily`);
+      // Calculate limit based on timeRange
+      let limit = 60; // default
+      switch(timeRange) {
+        case '7': limit = 7; break;
+        case '30': limit = 30; break;
+        case '60': limit = 60; break;
+        case '90': limit = 90; break;
+        case 'all': limit = 1000; break;
+        default: limit = 60;
+      }
+
+      const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=${limit}`);
       const data = await response.json();
       
-      const formattedData = data.prices.map(([timestamp, price]) => ({
-        date: new Date(timestamp).toISOString().split('T')[0],
-        price: price
+      const formattedData = data.map(candle => ({
+        date: new Date(candle[0]).toISOString().split('T')[0],
+        price: parseFloat(candle[4]) // Close price
       }));
       
       setPriceData(formattedData);
@@ -38,7 +49,7 @@ const IndependentM2Chart = () => {
   const [chartHeight] = useState(400);
   
   // Independent data sources
-  const { priceData, loading: priceLoading, error: priceError, fetchPriceData } = usePriceData();
+  const { priceData, loading: priceLoading, error: priceError, fetchPriceData } = useBinancePriceData();
   const { data: m2Data, loading: m2Loading, error: m2Error } = useM2GlobalData();
 
   // Fetch price data when timeRange changes
