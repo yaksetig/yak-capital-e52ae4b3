@@ -1553,32 +1553,6 @@ const TradingDashboard = () => {
           </>
         ) : currentView === 'technical' ? (
           <>
-        {/* Chart Controls */}
-        <ChartControls
-          yAxisPadding={yAxisPadding}
-          onYAxisPaddingChange={handleYAxisPaddingChange}
-          autoFit={autoFit}
-          onAutoFitChange={handleAutoFitChange}
-          minPrice={manualPriceRange.min}
-          maxPrice={manualPriceRange.max}
-          onPriceRangeChange={handlePriceRangeChange}
-          chartHeight={chartHeight}
-          onChartHeightChange={setChartHeight}
-          visibleLines={visibleLines}
-          onLineVisibilityChange={handleLineVisibilityChange}
-          showCycleAnalysis={showCycleAnalysis}
-          onCycleAnalysisChange={setShowCycleAnalysis}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onResetZoom={handleResetZoom}
-          onFocusRecent={handleFocusRecent}
-        />
-
-        <CycleAnalysisPanel
-          cycles={cycles}
-          cycleStrength={cycleStrength}
-          isVisible={showCycleAnalysis}
-        />
 
 
         {/* Price vs Global Liquidity Chart - Updated */}
