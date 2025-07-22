@@ -13,16 +13,15 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from "@/components/ui/skeleton"
-import { NewsSection } from '@/components/NewsSection';
-import { CycleAnalysisPanel } from '@/components/CycleAnalysisPanel';
-import { CycleProjectionModal } from '@/components/CycleProjectionModal';
-import { AIRecommendationSection } from '@/components/AIRecommendationSection';
-import { MACDChart } from '@/components/MACDChart';
-import { StochasticChart } from '@/components/StochasticChart';
-import { ROCChart } from '@/components/ROCChart';
-import { TimeSeriesMomentumChart } from '@/components/TimeSeriesMomentumChart';
-import { IndependentM2Chart } from '@/components/IndependentM2Chart';
+import NewsSection from '@/components/NewsSection';
+import CycleAnalysisPanel from '@/components/CycleAnalysisPanel';
+import CycleProjectionModal from '@/components/CycleProjectionModal';
+import AIRecommendationSection from '@/components/AIRecommendationSection';
+import MACDChart from '@/components/MACDChart';
+import StochasticChart from '@/components/StochasticChart';
+import ROCChart from '@/components/ROCChart';
+import TimeSeriesMomentumChart from '@/components/TimeSeriesMomentumChart';
+import IndependentM2Chart from '@/components/IndependentM2Chart';
 import { MobileOptimizedLayout } from './MobileOptimizedLayout';
 import { ResponsiveMetricsGrid } from './ResponsiveMetricsGrid';
 import { MobileChartContainer } from './MobileChartContainer';
@@ -83,8 +82,13 @@ const TradingDashboard = () => {
     fetchData();
   }, [timeRange]);
 
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
+  const formatDate = (input: number | string) => {
+    let date: Date;
+    if (typeof input === 'number') {
+      date = new Date(input);
+    } else {
+      date = new Date(input);
+    }
     return date.toLocaleDateString();
   };
 
@@ -93,7 +97,7 @@ const TradingDashboard = () => {
       title: "Bitcoin Price",
       value: btcPrice ? `$${btcPrice.toLocaleString()}` : 'Loading...',
       change: btcPriceChange24h ? `${btcPriceChange24h > 0 ? '+' : ''}${btcPriceChange24h.toFixed(2)}%` : undefined,
-      trend: btcPriceChange24h ? (btcPriceChange24h > 0 ? 'up' : 'down') : 'neutral'
+      trend: btcPriceChange24h ? (btcPriceChange24h > 0 ? 'up' as const : 'down' as const) : 'neutral' as const
     },
     {
       title: "24h Volume",
@@ -279,14 +283,15 @@ const TradingDashboard = () => {
             priority="low"
           >
             <CycleAnalysisPanel 
-              data={chartData}
-              onProjectionClick={setSelectedCycleData}
+              cycles={[]}
+              cycleStrength={0}
+              isVisible={true}
             />
           </MobileChartContainer>
         )}
 
         {/* AI Recommendation - Always visible but smaller on mobile */}
-        <AIRecommendationSection />
+        <AIRecommendationSection symbol="BTC" />
 
         {/* News Section - Collapsible on mobile */}
         <MobileChartContainer 
@@ -294,14 +299,15 @@ const TradingDashboard = () => {
           defaultCollapsed={isMobile}
           priority="low"
         >
-          <NewsSection />
+          <NewsSection symbol="BTC" />
         </MobileChartContainer>
       </div>
 
       {selectedCycleData && (
         <CycleProjectionModal
-          cycleData={selectedCycleData}
+          isOpen={!!selectedCycleData}
           onClose={() => setSelectedCycleData(null)}
+          cycleId={selectedCycleData}
         />
       )}
     </MobileOptimizedLayout>

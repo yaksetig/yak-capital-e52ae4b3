@@ -6,50 +6,38 @@ import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 
 interface InfoCardProps {
   title: string;
-  shortDescription: string;
-  detailedExplanation: string;
-  tradingTip?: string;
+  value: string;
+  change?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  className?: string;
 }
 
 const InfoCard: React.FC<InfoCardProps> = ({ 
   title, 
-  shortDescription, 
-  detailedExplanation, 
-  tradingTip 
+  value,
+  change,
+  trend,
+  className = ""
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const getTrendColor = (trend?: 'up' | 'down' | 'neutral') => {
+    switch (trend) {
+      case 'up': return 'text-green-600';
+      case 'down': return 'text-red-600';
+      default: return 'text-muted-foreground';
+    }
+  };
 
   return (
-    <Card className="p-4 shadow-card border-border">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <Info className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+    <Card className={`p-4 shadow-card border-border ${className}`}>
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        <div className="text-2xl font-bold text-foreground">{value}</div>
+        {change && (
+          <div className={`text-sm font-medium ${getTrendColor(trend)}`}>
+            {change}
           </div>
-          <p className="text-xs text-muted-foreground mb-2">{shortDescription}</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="ml-2"
-        >
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </Button>
+        )}
       </div>
-      
-      {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <p className="text-sm text-foreground mb-3">{detailedExplanation}</p>
-          {tradingTip && (
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <p className="text-xs font-medium text-primary mb-1">💡 Trading Tip:</p>
-              <p className="text-xs text-muted-foreground">{tradingTip}</p>
-            </div>
-          )}
-        </div>
-      )}
     </Card>
   );
 };
