@@ -4,7 +4,10 @@ project_id = "envcoclhjitywvgwuywn"
 [functions.fetch-news]
 verify_jwt = false
 
-[functions.fetch-m2-data]
+[functions.fetch-bitcoin-tvl-data]
+verify_jwt = false
+
+[functions.fetch-m2-supply-data]
 verify_jwt = false
 
 [functions.fetch-ai-recommendation]
