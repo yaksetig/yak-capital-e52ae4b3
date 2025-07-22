@@ -6,23 +6,14 @@ import { format } from 'date-fns';
 import { useBitcoinPrice } from '@/hooks/useBitcoinPrice';
 import { useBitcoinTVLData } from '@/hooks/useBitcoinTVLData';
 import { useFearGreedIndex } from '@/hooks/useFearGreedIndex';
-import { useAIRecommendation } from '@/hooks/useAIRecommendation';
-import { useNewsData } from '@/hooks/useNewsData';
 import NewsSection from './NewsSection';
 import AIRecommendationSection from './AIRecommendationSection';
-import InfoCard from './InfoCard';
 import TimeRangeSelector from './TimeRangeSelector';
-import ChartControls from './ChartControls';
-import CycleAnalysisPanel from './CycleAnalysisPanel';
 import IndependentM2Chart from './IndependentM2Chart';
-import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
-import MACDChart from './MACDChart';
-import ROCChart from './ROCChart';
-import StochasticChart from './StochasticChart';
+import SimpleInfoCard from './SimpleInfoCard';
 
 const TradingDashboard = () => {
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y'>('1M');
-  const [selectedChart, setSelectedChart] = useState<'price' | 'momentum' | 'macd' | 'roc' | 'stochastic'>('price');
   
   // Bitcoin price and TVL data
   const { data: priceData, loading: priceLoading, error: priceError } = useBitcoinPrice(timeRange);
@@ -30,8 +21,6 @@ const TradingDashboard = () => {
   
   // Other data hooks
   const { data: fearGreedData } = useFearGreedIndex();
-  const { data: aiRecommendation } = useAIRecommendation();
-  const { data: newsData } = useNewsData();
 
   // Correlate price data with TVL data
   const correlatedData = priceData.map(pricePoint => {
@@ -78,34 +67,36 @@ const TradingDashboard = () => {
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <InfoCard
+          <SimpleInfoCard
             title="Current Price"
             value={priceData.length > 0 ? formatPrice(priceData[priceData.length - 1].price) : 'Loading...'}
             change={priceData.length > 1 ? 
               ((priceData[priceData.length - 1].price - priceData[priceData.length - 2].price) / priceData[priceData.length - 2].price * 100).toFixed(2) + '%' 
               : '0%'}
           />
-          <InfoCard
+          <SimpleInfoCard
             title="24h Volume"
             value={priceData.length > 0 ? formatNumber(priceData[priceData.length - 1].volume) : 'Loading...'}
             change="Volume"
           />
-          <InfoCard
+          <SimpleInfoCard
             title="Fear & Greed"
             value={fearGreedData ? fearGreedData.value.toString() : 'Loading...'}
-            change={fearGreedData ? fearGreedData.classification : 'Loading...'}
+            change={fearGreedData ? fearGreedData.value_classification : 'Loading...'}
           />
-          <InfoCard
+          <SimpleInfoCard
             title="Current TVL"
             value={tvlData.length > 0 ? formatTVL(tvlData[tvlData.length - 1].tvl) : 'Loading...'}
             change="Bitcoin L2s"
           />
         </div>
 
-        {/* Chart Controls */}
-        <div className="flex flex-wrap gap-4 justify-between items-center">
-          <TimeRangeSelector timeRange={timeRange} onTimeRangeChange={setTimeRange} />
-          <ChartControls selectedChart={selectedChart} onChartChange={setSelectedChart} />
+        {/* Time Range Selector */}
+        <div className="flex justify-center">
+          <TimeRangeSelector 
+            selectedRange={timeRange} 
+            onRangeChange={(range: string) => setTimeRange(range as '1W' | '1M' | '3M' | '1Y')} 
+          />
         </div>
 
         {/* Main Chart */}
@@ -157,23 +148,14 @@ const TradingDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Additional Charts */}
-        {selectedChart === 'momentum' && <TimeSeriesMomentumChart />}
-        {selectedChart === 'macd' && <MACDChart />}
-        {selectedChart === 'roc' && <ROCChart />}
-        {selectedChart === 'stochastic' && <StochasticChart />}
-
         {/* Independent M2 Chart */}
         <IndependentM2Chart />
 
-        {/* Cycle Analysis */}
-        <CycleAnalysisPanel />
-
         {/* AI Recommendation */}
-        <AIRecommendationSection recommendation={aiRecommendation} />
+        <AIRecommendationSection symbol="BTC" />
 
         {/* News Section */}
-        <NewsSection news={newsData} />
+        <NewsSection symbol="BTC" />
       </div>
     </div>
   );
