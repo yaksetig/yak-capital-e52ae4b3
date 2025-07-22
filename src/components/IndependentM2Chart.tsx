@@ -73,7 +73,7 @@ const IndependentM2Chart: React.FC<IndependentM2ChartProps> = ({
             <Tooltip 
               formatter={(value, name) => {
                 if (name === 'Price') return [formatPrice(Number(value)), name];
-                if (name === 'TVL') return [formatM2Supply(Number(value)), name];
+                if (name === 'M2 Supply') return [formatM2Supply(Number(value)), name];
                 return [value, name];
               }}
               labelFormatter={(label) => `Date: ${formatDate(label)}`}
@@ -104,7 +104,7 @@ const IndependentM2Chart: React.FC<IndependentM2ChartProps> = ({
                 dataKey="m2Supply" 
                 stroke="hsl(var(--chart-2))" 
                 strokeWidth={2} 
-                name="TVL" 
+                name="M2 Supply" 
                 dot={false} 
                 isAnimationActive={false}
                 connectNulls={false}
