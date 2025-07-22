@@ -1,3 +1,4 @@
+
 // Fast Fourier Transform implementation
 interface ComplexNumber {
   re: number;
@@ -120,9 +121,24 @@ export function generateCycleProjections(
   const lastTimestamp = chartData[chartData.length - 1].timestamp;
   const timeInterval = chartData[1]?.timestamp - chartData[0]?.timestamp || 86400000; // Default to 1 day
   
+  console.log('Generating cycle projections:', {
+    chartDataLength: chartData.length,
+    cycleCount: cycles.length,
+    lastTimestamp,
+    timeInterval
+  });
+  
   cycles.slice(0, 3).forEach((cycle, index) => { // Top 3 cycles
     const cyclePhase = (chartData.length % cycle.period) / cycle.period * 2 * Math.PI;
-    const amplitude = cycle.magnitude * 0.01; // Scale amplitude appropriately
+    // Increased amplitude scaling from 0.01 to 0.05 to make projections more visible
+    const amplitude = cycle.magnitude * 0.05;
+    
+    console.log(`Cycle ${index}:`, {
+      period: cycle.period,
+      magnitude: cycle.magnitude,
+      amplitude,
+      strength: cycle.strength
+    });
     
     for (let i = 1; i <= projectionLength; i++) {
       const futureTimestamp = lastTimestamp + (i * timeInterval);
@@ -134,6 +150,11 @@ export function generateCycleProjections(
         cycleId: `cycle-${index}`
       });
     }
+  });
+  
+  console.log('Generated projections:', {
+    totalProjections: projections.length,
+    sampleValues: projections.slice(0, 5).map(p => p.value)
   });
   
   return projections;
