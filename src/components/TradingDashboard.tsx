@@ -1617,6 +1617,92 @@ const TradingDashboard = () => {
           </div>
         </Card>
 
+        {/* Price vs Global Liquidity (M2) Chart - Replica */}
+        <Card className="p-6 mb-8 shadow-card border-border">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2)</h2>
+              {m2Loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
+            </div>
+            <TimeRangeSelector 
+              selectedRange={timeRange}
+              onRangeChange={setTimeRange}
+            />
+          </div>
+          
+          {m2Error && (
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive">Failed to load M2 data: {m2Error.message}</p>
+            </div>
+          )}
+          
+          <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={filteredChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={formatDate}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  yAxisId="price"
+                  orientation="left"
+                  domain={yAxisDomain}
+                  tickFormatter={formatPriceShort}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  yAxisId="m2"
+                  orientation="right"
+                  tickFormatter={formatM2Supply}
+                  stroke="hsl(var(--chart-2))"
+                />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'Price') return [formatPrice(Number(value)), name];
+                    if (name === 'TVL') return [formatM2Supply(Number(value)), name];
+                    return [value, name];
+                  }}
+                  labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                />
+                <Legend />
+                
+                <Line 
+                  yAxisId="price"
+                  type="monotone" 
+                  dataKey="price" 
+                  stroke="hsl(var(--foreground))" 
+                  strokeWidth={3} 
+                  name="Price" 
+                  dot={false} 
+                  isAnimationActive={false} 
+                />
+                
+                {filteredChartData.some(d => d.m2Supply) && (
+                  <Line 
+                    yAxisId="m2"
+                    type="monotone" 
+                    dataKey="m2Supply" 
+                    stroke="hsl(var(--chart-2))" 
+                    strokeWidth={2} 
+                    name="TVL" 
+                    dot={false} 
+                    isAnimationActive={false}
+                    connectNulls={false}
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
         {/* Indicator Charts - Updated to include Z-Score charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* RSI Chart */}
