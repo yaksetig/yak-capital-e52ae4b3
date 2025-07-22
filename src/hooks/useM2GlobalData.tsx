@@ -15,7 +15,7 @@ export const useM2GlobalData = () => {
       console.log('Fetching M2 supply data from Supabase database...');
       
       const { data, error } = await supabase
-        .rpc('get_m2_supply_data');
+        .rpc('get_m2_supply_data') as { data: any[] | null, error: any };
       
       if (error) {
         console.error('Supabase error:', error);
