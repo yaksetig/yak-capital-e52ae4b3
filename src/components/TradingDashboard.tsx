@@ -20,6 +20,7 @@ import IndependentM2Chart from './IndependentM2Chart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
+import { useBitcoinTVLData } from '../hooks/useBitcoinTVLData';
 
 
 const TradingDashboard = () => {
@@ -61,6 +62,9 @@ const TradingDashboard = () => {
 
   // M2 Global Data
   const { data: m2Data, loading: m2Loading, error: m2Error } = useM2GlobalData();
+
+  // Bitcoin TVL Data
+  const { data: tvlData, loading: tvlLoading, error: tvlError } = useBitcoinTVLData();
 
   // Configuration
   const LOOKBACK_DAYS = 201;
@@ -658,35 +662,35 @@ const TradingDashboard = () => {
     setAutoFit(true);
   };
 
-  // Helper function to correlate M2 data with price data
-  const correlateM2WithPriceData = (priceData: any[], m2Data: any[]) => {
-    if (!m2Data || m2Data.length === 0) {
-      console.log('No M2 data available for correlation');
+  // Helper function to correlate TVL data with price data
+  const correlateTVLWithPriceData = (priceData: any[], tvlData: any[]) => {
+    if (!tvlData || tvlData.length === 0) {
+      console.log('No TVL data available for correlation');
       return priceData;
     }
 
-    console.log('Correlating M2 data:', { m2DataLength: m2Data.length, priceDataLength: priceData.length });
+    console.log('Correlating TVL data:', { tvlDataLength: tvlData.length, priceDataLength: priceData.length });
 
-    // Create a map of M2 data by date for efficient lookup
-    const m2Map = new Map();
-    m2Data.forEach(item => {
+    // Create a map of TVL data by date for efficient lookup
+    const tvlMap = new Map();
+    tvlData.forEach(item => {
       const date = new Date(item.date).toISOString().split('T')[0];
-      m2Map.set(date, item.m2Supply);
+      tvlMap.set(date, item.tvl);
     });
 
-    console.log('M2 data map size:', m2Map.size);
+    console.log('TVL data map size:', tvlMap.size);
 
-    // Add M2 data to price data where dates match
+    // Add TVL data to price data where dates match
     const correlatedData = priceData.map(item => {
-      const m2Supply = m2Map.get(item.date);
+      const tvl = tvlMap.get(item.date);
       return {
         ...item,
-        m2Supply: m2Supply || null
+        tvl: tvl || null
       };
     });
 
-    const m2MatchCount = correlatedData.filter(item => item.m2Supply !== null).length;
-    console.log('M2 correlation results:', { totalPricePoints: priceData.length, m2Matches: m2MatchCount });
+    const tvlMatchCount = correlatedData.filter(item => item.tvl !== null).length;
+    console.log('TVL correlation results:', { totalPricePoints: priceData.length, tvlMatches: tvlMatchCount });
 
     return correlatedData;
   };
@@ -704,6 +708,22 @@ const TradingDashboard = () => {
       return `$${(value / billion).toFixed(2)}B`;
     } else {
       return `$${value.toLocaleString()}`;
+    }
+  };
+
+  // Helper function to format TVL values
+  const formatTVL = (value: number) => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    const billion = 1000000000;
+    const million = 1000000;
+    
+    if (value >= billion) {
+      return `$${(value / billion).toFixed(2)}B`;
+    } else if (value >= million) {
+      return `$${(value / million).toFixed(2)}M`;
+    } else {
+      return `$${(value / 1000).toFixed(2)}K`;
     }
   };
 
@@ -984,8 +1004,8 @@ const TradingDashboard = () => {
       };
     });
 
-    // Correlate M2 data with price data
-    chartData = correlateM2WithPriceData(chartData, m2Data);
+    // Correlate TVL data with price data
+    chartData = correlateTVLWithPriceData(chartData, tvlData);
 
     const indicators = {
       ...currentSMAs,
@@ -1532,12 +1552,12 @@ const TradingDashboard = () => {
           <>
 
 
-        {/* Price vs Global Liquidity Chart - Updated */}
+        {/* Price vs TVL Chart - Using DeFiLlama Data */}
         <Card className="p-6 mb-8 shadow-card border-border">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-foreground">Price vs TVL</h2>
-              {m2Loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
+              {tvlLoading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
             </div>
             <TimeRangeSelector 
               selectedRange={timeRange}
@@ -1545,9 +1565,9 @@ const TradingDashboard = () => {
             />
           </div>
           
-          {m2Error && (
+          {tvlError && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <p className="text-sm text-destructive">Failed to load M2 data: {m2Error.message}</p>
+              <p className="text-sm text-destructive">Failed to load TVL data: {tvlError.message}</p>
             </div>
           )}
           
@@ -1568,15 +1588,15 @@ const TradingDashboard = () => {
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis 
-                  yAxisId="m2"
+                  yAxisId="tvl"
                   orientation="right"
-                  tickFormatter={formatM2Supply}
+                  tickFormatter={formatTVL}
                   stroke="hsl(var(--chart-2))"
                 />
                 <Tooltip 
                   formatter={(value, name) => {
                     if (name === 'Price') return [formatPrice(Number(value)), name];
-                    if (name === 'TVL') return [formatM2Supply(Number(value)), name];
+                    if (name === 'TVL') return [formatTVL(Number(value)), name];
                     return [value, name];
                   }}
                   labelFormatter={(label) => `Date: ${formatDate(label)}`}
@@ -1600,11 +1620,11 @@ const TradingDashboard = () => {
                   isAnimationActive={false} 
                 />
                 
-                {filteredChartData.some(d => d.m2Supply) && (
+                {filteredChartData.some(d => d.tvl) && (
                   <Line 
-                    yAxisId="m2"
+                    yAxisId="tvl"
                     type="monotone" 
-                    dataKey="m2Supply" 
+                    dataKey="tvl" 
                     stroke="hsl(var(--chart-2))" 
                     strokeWidth={2} 
                     name="TVL" 
