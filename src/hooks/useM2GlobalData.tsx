@@ -17,20 +17,22 @@ export const useM2GlobalData = () => {
   const { data: rawData, isLoading, error } = useQuery({
     queryKey: ['m2-global-data'],
     queryFn: async (): Promise<M2DatabaseRow[]> => {
-      console.log('Fetching M2 supply data from Supabase database...');
+      console.log('Fetching M2 supply data using database function...');
       
-      const { data, error } = await supabase
-        .from('m2supply')
-        .select('*')
-        .order('date', { ascending: true });
+      const { data, error } = await (supabase as any).rpc('get_m2_supply_data');
       
       if (error) {
-        console.error('Supabase query error:', error);
+        console.error('Database function error:', error);
         throw new Error(`Database error: ${error.message}`);
       }
       
-      console.log('M2 supply data received:', { count: data?.length || 0, sample: data?.[0] });
-      return data || [];
+      if (!data) {
+        console.log('No M2 supply data received');
+        return [];
+      }
+      
+      console.log('M2 supply data received:', { count: data.length, sample: data[0] });
+      return data as M2DatabaseRow[];
     },
     staleTime: 1000 * 60 * 60, // 1 hour
     refetchOnWindowFocus: false,
