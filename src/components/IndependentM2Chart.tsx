@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Card } from '@/components/ui/card';
 import TimeRangeSelector from './TimeRangeSelector';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
+import { calculateCorrelation, getCorrelationInfo } from '../utils/correlation';
 
 const IndependentM2Chart = () => {
   const [timeRange, setTimeRange] = useState('60');
@@ -32,6 +33,18 @@ const IndependentM2Chart = () => {
     });
   }, [allData, timeRange]);
 
+  // Calculate correlation between M2 supply and Bitcoin price
+  const correlation = useMemo(() => {
+    if (chartData.length < 2) return null;
+    
+    const m2Values = chartData.map(item => item.m2Supply);
+    const btcValues = chartData.map(item => item.btcPrice);
+    
+    return calculateCorrelation(m2Values, btcValues);
+  }, [chartData]);
+
+  const correlationInfo = getCorrelationInfo(correlation);
+
   const formatPrice = (value) => `$${value.toLocaleString()}`;
   const formatM2Supply = (value) => `$${(value / 1e12).toFixed(1)}T`;
   const formatDate = (date) => new Date(date).toLocaleDateString();
@@ -40,7 +53,20 @@ const IndependentM2Chart = () => {
     <Card className="p-6 mb-8 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2) - Complete Historical Data</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2) - Complete Historical Data</h2>
+            <div className="mt-2 p-2 bg-muted/50 rounded-lg">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Correlation: </span>
+                <span className={`font-semibold ${correlationInfo.color}`}>
+                  {correlation !== null ? correlation.toFixed(3) : 'N/A'}
+                </span>
+                <span className={`ml-2 text-sm ${correlationInfo.color}`}>
+                  ({correlationInfo.strength})
+                </span>
+              </div>
+            </div>
+          </div>
           {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
         </div>
         <TimeRangeSelector 
