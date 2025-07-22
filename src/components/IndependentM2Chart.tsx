@@ -61,17 +61,30 @@ const IndependentM2Chart = () => {
   const chartData = React.useMemo(() => {
     if (!priceData.length || !m2Data.length) return [];
 
-    const m2Map = new Map(m2Data.map(item => [item.date, item.m2Supply]));
-    
-    return priceData.map(priceItem => ({
-      date: priceItem.date,
-      price: priceItem.price,
-      m2Supply: m2Map.get(priceItem.date) || null
+    // Create a map from M2 data using the correct date format
+    const m2Map = new Map(m2Data.map(item => {
+      const dateStr = typeof item.date === 'string' ? item.date.split('T')[0] : new Date(item.date).toISOString().split('T')[0];
+      return [dateStr, item.m2Supply];
     }));
+    
+    console.log('M2 data map:', Array.from(m2Map.entries()).slice(0, 5)); // Debug log
+    
+    return priceData.map(priceItem => {
+      const m2Value = m2Map.get(priceItem.date);
+      console.log(`Date: ${priceItem.date}, M2: ${m2Value}`); // Debug log
+      return {
+        date: priceItem.date,
+        price: priceItem.price,
+        m2Supply: m2Value || null
+      };
+    });
   }, [priceData, m2Data]);
 
   const formatPrice = (value) => `$${value.toLocaleString()}`;
-  const formatM2Supply = (value) => `$${(value / 1e12).toFixed(1)}T`;
+  const formatM2Supply = (value) => {
+    if (!value || value === 0) return '$0.0T';
+    return `$${(value / 1e12).toFixed(1)}T`;
+  };
   const formatDate = (date) => new Date(date).toLocaleDateString();
 
   return (
