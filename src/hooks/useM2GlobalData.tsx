@@ -15,9 +15,7 @@ export const useM2GlobalData = () => {
       console.log('Fetching M2 supply data from Supabase database...');
       
       const { data, error } = await supabase
-        .from('m2supply')
-        .select('date, m2_supply')
-        .order('date', { ascending: true });
+        .rpc('get_m2_supply_data');
       
       if (error) {
         console.error('Supabase error:', error);
@@ -27,7 +25,7 @@ export const useM2GlobalData = () => {
       console.log('M2 supply data received from database:', { count: data?.length, sample: data?.[0] });
       
       // Process the data to match expected format
-      const processedData = data?.map(item => ({
+      const processedData = data?.map((item: any) => ({
         date: item.date,
         m2Supply: item.m2_supply
       })) || [];

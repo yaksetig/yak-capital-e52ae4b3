@@ -13,7 +13,7 @@ import {
 import { useBitcoinPrice } from '@/hooks/useBitcoinPrice';
 import { useM2GlobalData } from '@/hooks/useM2GlobalData';
 import { format, parseISO } from 'date-fns';
-import { TimeRangeSelector } from './TimeRangeSelector';
+import TimeRangeSelector from './TimeRangeSelector';
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatPrice, formatPriceShort } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ const formatM2Supply = (value: number) => {
   return value.toFixed(2);
 };
 
-export const TradingDashboard = () => {
+const TradingDashboard = () => {
   // State for time range selection
   const [timeRange, setTimeRange] = useState('1y'); // Default time range
 
@@ -235,7 +235,7 @@ export const TradingDashboard = () => {
               <YAxis 
                 yAxisId="price"
                 orientation="left"
-                domain={yAxisDomain}
+                domain={yAxisDomain as [number, number]}
                 tickFormatter={formatPriceShort}
                 stroke="hsl(var(--muted-foreground))"
               />
@@ -319,3 +319,5 @@ export const TradingDashboard = () => {
     </div>
   );
 };
+
+export default TradingDashboard;
