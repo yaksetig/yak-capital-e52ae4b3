@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      m2supply: {
+        Row: {
+          btc_price: number | null
+          date: string
+          id: number
+          m2_supply: number
+        }
+        Insert: {
+          btc_price?: number | null
+          date: string
+          id?: number
+          m2_supply: number
+        }
+        Update: {
+          btc_price?: number | null
+          date?: string
+          id?: number
+          m2_supply?: number
+        }
+        Relationships: []
+      }
       news_articles: {
         Row: {
           authors: string[] | null
@@ -106,7 +127,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_m2_supply_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          date: string
+          m2_supply: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
