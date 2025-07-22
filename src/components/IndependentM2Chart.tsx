@@ -115,7 +115,8 @@ const IndependentM2Chart = () => {
               yAxisId="m2"
               orientation="right"
               tickFormatter={formatM2Supply}
-              stroke="hsl(var(--chart-2))"
+              stroke="hsl(var(--primary))"
+              domain={[50000000000000, 'dataMax']}
             />
             <Tooltip 
               formatter={(value, name) => {
