@@ -1307,20 +1307,6 @@ const TradingDashboard = () => {
         {/* Educational Section */}
         <Collapsible open={showEducation} onOpenChange={setShowEducation}>
           <CollapsibleContent>
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 text-foreground">Understanding Technical Indicators</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {educationalContent.map((content, index) => (
-                  <InfoCard
-                    key={index}
-                    title={content.title}
-                    shortDescription={content.shortDescription}
-                    detailedExplanation={content.detailedExplanation}
-                    tradingTip={content.tradingTip}
-                  />
-                ))}
-              </div>
-            </div>
           </CollapsibleContent>
         </Collapsible>
         
