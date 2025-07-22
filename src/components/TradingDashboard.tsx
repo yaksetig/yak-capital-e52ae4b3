@@ -711,21 +711,6 @@ const TradingDashboard = () => {
     }
   };
 
-  // Helper function to format TVL values
-  const formatTVL = (value: number) => {
-    if (value === null || value === undefined) return 'N/A';
-    
-    const billion = 1000000000;
-    const million = 1000000;
-    
-    if (value >= billion) {
-      return `$${(value / billion).toFixed(2)}B`;
-    } else if (value >= million) {
-      return `$${(value / million).toFixed(2)}M`;
-    } else {
-      return `$${(value / 1000).toFixed(2)}K`;
-    }
-  };
 
   const processedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return { chartData: [], indicators: null, cycles: [], cycleStrength: 0, cycleProjections: [] };
@@ -1186,6 +1171,22 @@ const TradingDashboard = () => {
 
   const formatDate = (value) => {
     return new Date(value).toLocaleDateString();
+  };
+
+  // Helper function to format TVL values
+  const formatTVL = (value: number) => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    const billion = 1000000000;
+    const million = 1000000;
+    
+    if (value >= billion) {
+      return `$${(value / billion).toFixed(2)}B`;
+    } else if (value >= million) {
+      return `$${(value / million).toFixed(2)}M`;
+    } else {
+      return `$${(value / 1000).toFixed(2)}K`;
+    }
   };
 
   const getSentimentColor = (sentiment) => {
