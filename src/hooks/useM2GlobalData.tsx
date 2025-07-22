@@ -8,37 +8,40 @@ interface M2DataPoint {
   m2Supply: number;
 }
 
-interface M2ApiResponse {
+interface M2DatabaseRow {
   date: string;
-  tvl: number; // Changed from m2Supply to tvl to match new API
+  m2_supply: number;
 }
 
 export const useM2GlobalData = () => {
   const { data: rawData, isLoading, error } = useQuery({
     queryKey: ['m2-global-data'],
-    queryFn: async (): Promise<M2ApiResponse[]> => {
-      console.log('Fetching Bitcoin TVL data via Edge Function...');
+    queryFn: async (): Promise<M2DatabaseRow[]> => {
+      console.log('Fetching M2 supply data from Supabase database...');
       
-      const { data, error } = await supabase.functions.invoke('fetch-m2-data');
+      const { data, error } = await supabase
+        .from('m2supply')
+        .select('*')
+        .order('date', { ascending: true });
       
       if (error) {
-        console.error('Edge Function error:', error);
-        throw new Error(`Edge Function error: ${error.message}`);
+        console.error('Supabase query error:', error);
+        throw new Error(`Database error: ${error.message}`);
       }
       
-      console.log('Bitcoin TVL data received:', { count: data.length, sample: data[0] });
-      return data;
+      console.log('M2 supply data received:', { count: data?.length || 0, sample: data?.[0] });
+      return data || [];
     },
     staleTime: 1000 * 60 * 60, // 1 hour
     refetchOnWindowFocus: false,
   });
 
   const processedData: M2DataPoint[] = rawData?.map(item => ({
-    date: item.date,
-    m2Supply: item.tvl // Map TVL to m2Supply for backward compatibility
+    date: new Date(item.date).toISOString().split('T')[0], // Convert to YYYY-MM-DD format
+    m2Supply: item.m2_supply // Map the database column to our interface
   })) || [];
 
-  console.log('Processed Bitcoin TVL data:', { count: processedData.length, sample: processedData[0] });
+  console.log('Processed M2 supply data:', { count: processedData.length, sample: processedData[0] });
 
   return {
     data: processedData,
