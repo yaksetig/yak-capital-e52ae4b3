@@ -60,6 +60,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
     { key: 'sma200', label: 'SMA 200', color: 'text-purple-400' },
     { key: 'ema20', label: 'EMA 20', color: 'text-accent' },
     { key: 'ema50', label: 'EMA 50', color: 'text-primary' },
+    { key: 'ema200', label: 'EMA 200', color: 'text-chart-5' },
     { key: 'bbUpper', label: 'BB Upper', color: 'text-muted-foreground' },
     { key: 'bbLower', label: 'BB Lower', color: 'text-muted-foreground' },
     { key: 'vwap', label: 'VWAP', color: 'text-chart-1' },
