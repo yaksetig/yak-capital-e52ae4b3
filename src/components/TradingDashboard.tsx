@@ -1657,7 +1657,7 @@ const TradingDashboard = () => {
                   <div className="bg-muted/50 rounded-lg p-3 mb-4">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Current RSI: </span>
-                      <span className="font-semibold">{indicators.rsi.toFixed(2)}</span>
+                      <span className="font-semibold">{indicators.rsi?.toFixed(2) || 'N/A'}</span>
                       <span className="text-muted-foreground ml-4">Signal: </span>
                       <span className={`font-semibold ${
                         indicators.rsi < 30 ? 'text-green-600' : 
@@ -1738,7 +1738,7 @@ const TradingDashboard = () => {
                       chartData[chartData.length - 1].cci < -100 ? 'text-green-600' : 
                       'text-yellow-600'
                     }`}>
-                      {chartData[chartData.length - 1].cci.toFixed(2)}
+                      {chartData[chartData.length - 1]?.cci?.toFixed(2) || 'N/A'}
                     </span>
                     <span className="text-muted-foreground ml-4">Signal: </span>
                     <span className={`font-semibold ${
