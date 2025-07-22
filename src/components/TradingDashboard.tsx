@@ -30,7 +30,7 @@ const TradingDashboard = () => {
   const [timeRange, setTimeRange] = useState('60');
   const [showEducation, setShowEducation] = useState(false);
   const [selectedCycleModal, setSelectedCycleModal] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'technical' | 'ai-trade' | 'news-sentiment'>('technical');
+  const [currentView, setCurrentView] = useState<'overview' | 'technical' | 'ai-trade' | 'news-sentiment'>('overview');
 
   // Chart zoom and display controls
   const [yAxisPadding, setYAxisPadding] = useState(10);
@@ -1385,6 +1385,15 @@ const TradingDashboard = () => {
         <div className="mb-8 flex justify-center">
           <div className="bg-muted rounded-lg p-1 inline-flex">
             <Button
+              variant={currentView === 'overview' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('overview')}
+              className={currentView === 'overview' ? 'bg-background shadow-sm text-foreground' : 'text-foreground hover:text-foreground'}
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              Overview
+            </Button>
+            <Button
               variant={currentView === 'technical' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('technical')}
@@ -1415,7 +1424,134 @@ const TradingDashboard = () => {
         </div>
 
         {/* Conditional Content Based on Current View */}
-        {currentView === 'technical' ? (
+        {currentView === 'overview' ? (
+          <>
+            {/* Chart Controls */}
+            <ChartControls
+              yAxisPadding={yAxisPadding}
+              onYAxisPaddingChange={handleYAxisPaddingChange}
+              autoFit={autoFit}
+              onAutoFitChange={handleAutoFitChange}
+              minPrice={manualPriceRange.min}
+              maxPrice={manualPriceRange.max}
+              onPriceRangeChange={handlePriceRangeChange}
+              chartHeight={chartHeight}
+              onChartHeightChange={setChartHeight}
+              visibleLines={visibleLines}
+              onLineVisibilityChange={handleLineVisibilityChange}
+              showCycleAnalysis={showCycleAnalysis}
+              onCycleAnalysisChange={setShowCycleAnalysis}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onResetZoom={handleResetZoom}
+              onFocusRecent={handleFocusRecent}
+            />
+
+            <CycleAnalysisPanel
+              cycles={cycles}
+              cycleStrength={cycleStrength}
+              isVisible={showCycleAnalysis}
+            />
+
+            {/* Main Price Chart */}
+            <Card className="p-6 mb-8 shadow-card border-border">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h2 className="text-xl font-semibold text-foreground">Price Chart with Technical Indicators</h2>
+                <TimeRangeSelector 
+                  selectedRange={timeRange}
+                  onRangeChange={setTimeRange}
+                />
+              </div>
+              <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={filteredChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={formatDate}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis 
+                      domain={yAxisDomain}
+                      tickFormatter={formatPriceShort}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <Tooltip 
+                      formatter={(value, name) => [formatPrice(value), name]}
+                      labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                    />
+                    <Legend />
+                    
+                     {visibleLines.bbUpper && <Line type="monotone" dataKey="bbUpper" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Upper" dot={false} isAnimationActive={false} />}
+                     {visibleLines.bbLower && <Line type="monotone" dataKey="bbLower" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="2 2" name="BB Lower" dot={false} isAnimationActive={false} />}
+                     
+                     {visibleLines.sma20 && <Line type="monotone" dataKey="sma20" stroke="hsl(var(--neutral))" strokeWidth={2} name="SMA 20" dot={false} isAnimationActive={false} />}
+                     {visibleLines.sma50 && <Line type="monotone" dataKey="sma50" stroke="hsl(var(--bearish))" strokeWidth={2} name="SMA 50" dot={false} isAnimationActive={false} />}
+                     {visibleLines.sma200 && <Line type="monotone" dataKey="sma200" stroke="hsl(var(--chart-4))" strokeWidth={2} name="SMA 200" dot={false} isAnimationActive={false} />}
+                     {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} isAnimationActive={false} />}
+                     {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} isAnimationActive={false} />}
+                     
+                     {/* VWAP Line with bright, visible color */}
+                     {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} isAnimationActive={false} />}
+                     
+                     {visibleLines.price && <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} isAnimationActive={false} />}
+                    
+                    {/* Cycle Projection Lines with click handlers */}
+                    {showCycleAnalysis && (
+                      <>
+                        {chartData.some(d => (d as any).cycle0) && (
+                           <Line 
+                             type="monotone" 
+                             dataKey="cycle0" 
+                             stroke="hsl(var(--cycle-1))" 
+                             strokeWidth={2} 
+                             strokeDasharray="8 8" 
+                             name="Cycle 1" 
+                             dot={false} 
+                             isAnimationActive={false}
+                             style={{ cursor: 'pointer' }}
+                           />
+                         )}
+                         {chartData.some(d => (d as any).cycle1) && (
+                           <Line 
+                             type="monotone" 
+                             dataKey="cycle1" 
+                             stroke="hsl(var(--cycle-2))" 
+                             strokeWidth={2} 
+                             strokeDasharray="8 8" 
+                             name="Cycle 2" 
+                             dot={false} 
+                             isAnimationActive={false}
+                             style={{ cursor: 'pointer' }}
+                           />
+                         )}
+                         {chartData.some(d => (d as any).cycle2) && (
+                           <Line 
+                             type="monotone" 
+                             dataKey="cycle2" 
+                             stroke="hsl(var(--cycle-3))" 
+                             strokeWidth={2} 
+                             strokeDasharray="8 8" 
+                             name="Cycle 3" 
+                             dot={false} 
+                             isAnimationActive={false}
+                             style={{ cursor: 'pointer' }}
+                           />
+                         )}
+                      </>
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </>
+        ) : currentView === 'technical' ? (
           <>
         {/* Chart Controls */}
         <ChartControls
