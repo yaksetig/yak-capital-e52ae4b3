@@ -30,7 +30,7 @@ const TradingDashboard = () => {
   const [timeRange, setTimeRange] = useState('60');
   const [showEducation, setShowEducation] = useState(false);
   const [selectedCycleModal, setSelectedCycleModal] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'overview' | 'technical' | 'ai-trade' | 'news-sentiment' | 'learn'>('overview');
+  const [currentView, setCurrentView] = useState<'overview' | 'technical' | 'ai-trade' | 'news-sentiment'>('overview');
 
   // Chart zoom and display controls
   const [yAxisPadding, setYAxisPadding] = useState(10);
@@ -1304,25 +1304,6 @@ const TradingDashboard = () => {
           </div>
         </div>
 
-        {/* Educational Section */}
-        <Collapsible open={showEducation} onOpenChange={setShowEducation}>
-          <CollapsibleContent>
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 text-foreground">Understanding Technical Indicators</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {educationalContent.map((content, index) => (
-                  <InfoCard
-                    key={index}
-                    title={content.title}
-                    shortDescription={content.shortDescription}
-                    detailedExplanation={content.detailedExplanation}
-                    tradingTip={content.tradingTip}
-                  />
-                ))}
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
         
         {/* Key Metrics Grid - Updated with Z-Score cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -1408,15 +1389,6 @@ const TradingDashboard = () => {
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               News & Market Sentiment
-            </Button>
-            <Button
-              variant={currentView === 'learn' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentView('learn')}
-              className={currentView === 'learn' ? 'bg-background shadow-sm text-foreground' : 'text-foreground hover:text-foreground'}
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              Learn
             </Button>
           </div>
         </div>
@@ -2003,123 +1975,6 @@ const TradingDashboard = () => {
 
 
         </div>
-          </>
-        ) : currentView === 'learn' ? (
-          <>
-          {/* Learn View */}
-          <div className="space-y-6">
-            <Card className="p-6 shadow-card border-border">
-              <h2 className="text-2xl font-bold mb-6 text-foreground">Financial Education</h2>
-              
-              {/* RSI Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">RSI (Relative Strength Index)</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    The RSI is a momentum oscillator that measures the speed and change of price movements. 
-                    It ranges from 0 to 100 and is typically used to identify overbought or oversold conditions.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                      <strong className="text-green-700 dark:text-green-400">Oversold (Below 30):</strong>
-                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">Potential buying opportunity</p>
-                    </div>
-                    <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                      <strong className="text-red-700 dark:text-red-400">Overbought (Above 70):</strong>
-                      <p className="text-sm text-red-600 dark:text-red-300 mt-1">Potential selling opportunity</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bollinger Bands Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">Bollinger Bands</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    Bollinger Bands consist of a moving average (middle band) and two standard deviation lines (upper and lower bands). 
-                    They help identify volatility and potential reversal points.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                      <strong className="text-blue-700 dark:text-blue-400">Upper Band:</strong>
-                      <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">Resistance level</p>
-                    </div>
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-                      <strong className="text-yellow-700 dark:text-yellow-400">Middle Band:</strong>
-                      <p className="text-sm text-yellow-600 dark:text-yellow-300 mt-1">20-period SMA</p>
-                    </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                      <strong className="text-purple-700 dark:text-purple-400">Lower Band:</strong>
-                      <p className="text-sm text-purple-600 dark:text-purple-300 mt-1">Support level</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* MACD Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">MACD (Moving Average Convergence Divergence)</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    MACD is a trend-following momentum indicator that shows the relationship between two moving averages. 
-                    It consists of the MACD line, signal line, and histogram.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                      <strong className="text-green-700 dark:text-green-400">Bullish Signal:</strong>
-                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">MACD crosses above signal line</p>
-                    </div>
-                    <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                      <strong className="text-red-700 dark:text-red-400">Bearish Signal:</strong>
-                      <p className="text-sm text-red-600 dark:text-red-300 mt-1">MACD crosses below signal line</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Moving Averages Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">Moving Averages</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    Moving averages smooth out price data to identify trends. Common types include Simple Moving Average (SMA) 
-                    and Exponential Moving Average (EMA).
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
-                      <strong className="text-indigo-700 dark:text-indigo-400">SMA (Simple):</strong>
-                      <p className="text-sm text-indigo-600 dark:text-indigo-300 mt-1">Equal weight to all periods</p>
-                    </div>
-                    <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
-                      <strong className="text-cyan-700 dark:text-cyan-400">EMA (Exponential):</strong>
-                      <p className="text-sm text-cyan-600 dark:text-cyan-300 mt-1">More weight to recent prices</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Support and Resistance Section */}
-              <div>
-                <h3 className="text-xl font-semibold mb-4 text-foreground">Support and Resistance</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    Support and resistance levels are key concepts in technical analysis that help identify potential entry and exit points.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
-                      <strong className="text-emerald-700 dark:text-emerald-400">Support:</strong>
-                      <p className="text-sm text-emerald-600 dark:text-emerald-300 mt-1">Price level where buying pressure emerges</p>
-                    </div>
-                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
-                      <strong className="text-orange-700 dark:text-orange-400">Resistance:</strong>
-                      <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">Price level where selling pressure emerges</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
           </>
         ) : (
           <>
