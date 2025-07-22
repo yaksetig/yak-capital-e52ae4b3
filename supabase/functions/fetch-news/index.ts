@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const isDev = Deno.env.get('NODE_ENV') === 'development';
+
 interface NewsArticle {
   title: string;
   url: string;
@@ -56,7 +58,9 @@ serve(async (req) => {
 
     // Check if there's already an ongoing request for this ticker
     if (ongoingRequests.has(tickerKey)) {
-      console.log(`Waiting for ongoing request for ${tickerKey}`);
+      if (isDev) {
+        console.log(`Waiting for ongoing request for ${tickerKey}`);
+      }
       const result = await ongoingRequests.get(tickerKey);
       return new Response(
         JSON.stringify(result),
@@ -89,7 +93,9 @@ serve(async (req) => {
 
     // If we have recent cached news, return it
     if (cachedNews && cachedNews.length > 0) {
-      console.log(`Returning ${cachedNews.length} cached articles for ${tickerKey}`)
+      if (isDev) {
+        console.log(`Returning ${cachedNews.length} cached articles for ${tickerKey}`)
+      }
       return new Response(
         JSON.stringify(cachedNews),
         { 
@@ -136,7 +142,9 @@ serve(async (req) => {
         .limit(50)
 
       if (!fallbackError && fallbackNews && fallbackNews.length > 0) {
-        console.log(`Returning ${fallbackNews.length} fallback cached articles for ${tickerKey}`)
+        if (isDev) {
+          console.log(`Returning ${fallbackNews.length} fallback cached articles for ${tickerKey}`)
+        }
         return new Response(
           JSON.stringify(fallbackNews),
           { 
@@ -162,7 +170,9 @@ serve(async (req) => {
 })
 
 async function fetchFreshNews(ticker: string, supabase: any) {
-  console.log(`Fetching fresh news for ${ticker} from Alpha Vantage`)
+  if (isDev) {
+    console.log(`Fetching fresh news for ${ticker} from Alpha Vantage`)
+  }
   
   const ALPHA_VANTAGE_API_KEY = Deno.env.get('ALPHA_VANTAGE_API_KEY')
   if (!ALPHA_VANTAGE_API_KEY) {
@@ -187,11 +197,15 @@ async function fetchFreshNews(ticker: string, supabase: any) {
   const data = await response.json()
   
   // Log the actual response for debugging
-  console.log('Alpha Vantage API response:', JSON.stringify(data, null, 2))
+  if (isDev) {
+    console.log('Alpha Vantage API response:', JSON.stringify(data, null, 2))
+  }
   
   // Check if it's a rate limit response - if so, try to return cached data instead
   if (data.Information && data.Information.includes('call frequency')) {
-    console.log('Alpha Vantage API rate limit exceeded - checking for any cached data')
+    if (isDev) {
+      console.log('Alpha Vantage API rate limit exceeded - checking for any cached data')
+    }
     
     // Try to get any cached data regardless of age
     const { data: anyCachedNews, error: anyError } = await supabase
@@ -202,7 +216,9 @@ async function fetchFreshNews(ticker: string, supabase: any) {
       .limit(50)
 
     if (!anyError && anyCachedNews && anyCachedNews.length > 0) {
-      console.log(`Returning ${anyCachedNews.length} old cached articles due to rate limit for ${ticker}`)
+      if (isDev) {
+        console.log(`Returning ${anyCachedNews.length} old cached articles due to rate limit for ${ticker}`)
+      }
       return anyCachedNews;
     }
     
@@ -252,7 +268,9 @@ async function fetchFreshNews(ticker: string, supabase: any) {
     return data.feed
   }
 
-  console.log(`Cached ${insertedNews?.length || 0} articles for ${ticker}`)
+  if (isDev) {
+    console.log(`Cached ${insertedNews?.length || 0} articles for ${ticker}`)
+  }
   
   return insertedNews || data.feed
 }

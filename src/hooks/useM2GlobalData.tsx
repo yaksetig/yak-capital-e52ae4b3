@@ -18,7 +18,9 @@ export const useM2GlobalData = () => {
   const { data: rawData, isLoading, error } = useQuery({
     queryKey: ['m2-global-data'],
     queryFn: async (): Promise<M2AndBitcoinApiResponse[]> => {
-      console.log('Fetching M2 Supply and Bitcoin price data via Edge Function...');
+      if (import.meta.env.DEV) {
+        console.log('Fetching M2 Supply and Bitcoin price data via Edge Function...');
+      }
       
       const { data, error } = await supabase.functions.invoke('fetch-m2-supply-data');
       
@@ -27,7 +29,9 @@ export const useM2GlobalData = () => {
         throw new Error(`Edge Function error: ${error.message}`);
       }
       
-      console.log('M2 Supply and Bitcoin price data received:', { count: data.length, sample: data[0] });
+      if (import.meta.env.DEV) {
+        console.log('M2 Supply and Bitcoin price data received:', { count: data.length, sample: data[0] });
+      }
       return data;
     },
     staleTime: 1000 * 60 * 60, // 1 hour
@@ -40,7 +44,9 @@ export const useM2GlobalData = () => {
     btcPrice: item.btcPrice
   })) || [];
 
-  console.log('Processed M2 Supply and Bitcoin price data:', { count: processedData.length, sample: processedData[0] });
+  if (import.meta.env.DEV) {
+    console.log('Processed M2 Supply and Bitcoin price data:', { count: processedData.length, sample: processedData[0] });
+  }
 
   return {
     data: processedData,

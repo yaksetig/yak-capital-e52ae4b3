@@ -30,7 +30,9 @@ interface NewsArticle {
 }
 
 const fetchNewsData = async (ticker: string): Promise<NewsArticle[]> => {
-  console.log('Fetching news for ticker:', ticker);
+  if (import.meta.env.DEV) {
+    console.log('Fetching news for ticker:', ticker);
+  }
   
   // Call our Supabase Edge Function using the supabase client
   const { data, error } = await supabase.functions.invoke('fetch-news', {

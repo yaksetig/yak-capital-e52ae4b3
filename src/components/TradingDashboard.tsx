@@ -665,11 +665,15 @@ const TradingDashboard = () => {
   // Helper function to correlate TVL data with price data
   const correlateTVLWithPriceData = (priceData: any[], tvlData: any[]) => {
     if (!tvlData || tvlData.length === 0) {
-      console.log('No TVL data available for correlation');
+      if (import.meta.env.DEV) {
+        console.log('No TVL data available for correlation');
+      }
       return priceData;
     }
 
-    console.log('Correlating TVL data:', { tvlDataLength: tvlData.length, priceDataLength: priceData.length });
+    if (import.meta.env.DEV) {
+      console.log('Correlating TVL data:', { tvlDataLength: tvlData.length, priceDataLength: priceData.length });
+    }
 
     // Create a map of TVL data by date for efficient lookup
     const tvlMap = new Map();
@@ -678,7 +682,9 @@ const TradingDashboard = () => {
       tvlMap.set(date, item.tvl);
     });
 
-    console.log('TVL data map size:', tvlMap.size);
+    if (import.meta.env.DEV) {
+      console.log('TVL data map size:', tvlMap.size);
+    }
 
     // Add TVL data to price data where dates match
     const correlatedData = priceData.map(item => {
@@ -690,7 +696,9 @@ const TradingDashboard = () => {
     });
 
     const tvlMatchCount = correlatedData.filter(item => item.tvl !== null).length;
-    console.log('TVL correlation results:', { totalPricePoints: priceData.length, tvlMatches: tvlMatchCount });
+    if (import.meta.env.DEV) {
+      console.log('TVL correlation results:', { totalPricePoints: priceData.length, tvlMatches: tvlMatchCount });
+    }
 
     return correlatedData;
   };
@@ -1047,12 +1055,14 @@ const TradingDashboard = () => {
       : [];
 
     if (showCycleAnalysis && cycles.length > 0) {
-      console.log('Cycle Analysis Results:', {
-        cycleCount: cycles.length,
-        cycleStrength,
-        topCycles: cycles.slice(0, 3),
-        projectionCount: cycleProjections.length
-      });
+      if (import.meta.env.DEV) {
+        console.log('Cycle Analysis Results:', {
+          cycleCount: cycles.length,
+          cycleStrength,
+          topCycles: cycles.slice(0, 3),
+          projectionCount: cycleProjections.length
+        });
+      }
     }
 
     let extendedChartData = [...chartData];

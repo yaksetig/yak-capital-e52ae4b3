@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const isDev = Deno.env.get('NODE_ENV') === 'development';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -14,7 +16,9 @@ serve(async (req) => {
   try {
     const { ticker, marketData } = await req.json();
     
-    console.log(`Fetching AI recommendation for ${ticker}`);
+    if (isDev) {
+      console.log(`Fetching AI recommendation for ${ticker}`);
+    }
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -39,7 +43,9 @@ serve(async (req) => {
 
     // Return cached recommendation if exists
     if (existingRecommendation && existingRecommendation.length > 0) {
-      console.log(`Returning cached AI recommendation for ${ticker}`);
+      if (isDev) {
+        console.log(`Returning cached AI recommendation for ${ticker}`);
+      }
       return new Response(JSON.stringify({ 
         data: existingRecommendation[0],
         fromCache: true 
@@ -49,7 +55,9 @@ serve(async (req) => {
     }
 
     // Generate new recommendation using NVIDIA API
-    console.log(`Generating new AI recommendation for ${ticker}`);
+    if (isDev) {
+      console.log(`Generating new AI recommendation for ${ticker}`);
+    }
     
     const nvidiaApiKey = Deno.env.get('NVIDIA_API_KEY');
     if (!nvidiaApiKey) {
@@ -140,7 +148,9 @@ Keep response concise but informative, under 250 words.`;
       });
     }
 
-    console.log(`Generated and stored new AI recommendation for ${ticker}`);
+    if (isDev) {
+      console.log(`Generated and stored new AI recommendation for ${ticker}`);
+    }
     
     return new Response(JSON.stringify({ 
       data: newRecommendation,

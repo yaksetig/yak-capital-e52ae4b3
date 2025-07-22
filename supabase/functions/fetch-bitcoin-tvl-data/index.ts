@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const isDev = Deno.env.get('NODE_ENV') === 'development';
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,7 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Fetching Bitcoin TVL data from DefiLlama API...');
+    if (isDev) {
+      console.log('Fetching Bitcoin TVL data from DefiLlama API...');
+    }
     
     const response = await fetch('https://api.llama.fi/v2/historicalChainTvl/Bitcoin', {
       headers: {
@@ -27,7 +31,9 @@ serve(async (req) => {
     }
     
     const data = await response.json();
-    console.log(`Successfully fetched ${data.length} Bitcoin TVL data points`);
+    if (isDev) {
+      console.log(`Successfully fetched ${data.length} Bitcoin TVL data points`);
+    }
     
     // Process the data to convert Unix timestamps to ISO dates and extract TVL
     const processedData = data.map((item: any) => ({
@@ -35,7 +41,9 @@ serve(async (req) => {
       tvl: item.tvl
     }));
     
-    console.log(`Returning ${processedData.length} processed Bitcoin TVL data points`);
+    if (isDev) {
+      console.log(`Returning ${processedData.length} processed Bitcoin TVL data points`);
+    }
     
     return new Response(
       JSON.stringify(processedData),
