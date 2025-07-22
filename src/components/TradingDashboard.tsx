@@ -46,6 +46,7 @@ const TradingDashboard = () => {
     sma200: false,
     ema20: false,
     ema50: false,
+    ema200: false,
     bbUpper: true,
     bbLower: true,
     vwap: false,
@@ -1084,6 +1085,7 @@ const TradingDashboard = () => {
             sma50: null,
             ema20: null,
             ema50: null,
+            ema200: null,
             bbUpper: null,
             bbMiddle: null,
             bbLower: null,
@@ -1509,6 +1511,7 @@ const TradingDashboard = () => {
                      {visibleLines.sma200 && <Line type="monotone" dataKey="sma200" stroke="hsl(var(--chart-4))" strokeWidth={2} name="SMA 200" dot={false} isAnimationActive={false} />}
                      {visibleLines.ema20 && <Line type="monotone" dataKey="ema20" stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="5 5" name="EMA 20" dot={false} isAnimationActive={false} />}
                      {visibleLines.ema50 && <Line type="monotone" dataKey="ema50" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" name="EMA 50" dot={false} isAnimationActive={false} />}
+                     {visibleLines.ema200 && <Line type="monotone" dataKey="ema200" stroke="hsl(var(--chart-5))" strokeWidth={2} strokeDasharray="5 5" name="EMA 200" dot={false} isAnimationActive={false} />}
                      
                      {/* VWAP Line with bright, visible color */}
                      {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} isAnimationActive={false} />}
