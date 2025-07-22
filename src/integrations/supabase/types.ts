@@ -132,6 +132,7 @@ export type Database = {
         Returns: {
           date: string
           m2_supply: number
+          btc_price: number
         }[]
       }
     }
