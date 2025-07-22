@@ -19,7 +19,7 @@ export const useBitcoinTVLData = () => {
     queryFn: async (): Promise<TVLApiResponse[]> => {
       console.log('Fetching Bitcoin TVL data via Edge Function...');
       
-      const { data, error } = await supabase.functions.invoke('fetch-m2-data');
+      const { data, error } = await supabase.functions.invoke('fetch-bitcoin-tvl-data');
       
       if (error) {
         console.error('Edge Function error:', error);
