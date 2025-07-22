@@ -8,38 +8,40 @@ interface M2DataPoint {
   m2Supply: number;
 }
 
+interface M2ApiResponse {
+  date: string;
+  tvl: number; // Changed from m2Supply to tvl to match new API
+}
+
 export const useM2GlobalData = () => {
   const { data: rawData, isLoading, error } = useQuery({
-    queryKey: ['m2-supply-data'],
-    queryFn: async (): Promise<M2DataPoint[]> => {
-      console.log('Fetching M2 supply data from Supabase database...');
+    queryKey: ['m2-global-data'],
+    queryFn: async (): Promise<M2ApiResponse[]> => {
+      console.log('Fetching Bitcoin TVL data via Edge Function...');
       
-      const { data, error } = await supabase
-        .rpc('get_m2_supply_data') as { data: any[] | null, error: any };
+      const { data, error } = await supabase.functions.invoke('fetch-m2-data');
       
       if (error) {
-        console.error('Supabase error:', error);
-        throw new Error(`Database error: ${error.message}`);
+        console.error('Edge Function error:', error);
+        throw new Error(`Edge Function error: ${error.message}`);
       }
       
-      console.log('M2 supply data received from database:', { count: data?.length, sample: data?.[0] });
-      
-      // Process the data to match expected format
-      const processedData = data?.map((item: any) => ({
-        date: item.date,
-        m2Supply: item.m2_supply
-      })) || [];
-      
-      return processedData;
+      console.log('Bitcoin TVL data received:', { count: data.length, sample: data[0] });
+      return data;
     },
     staleTime: 1000 * 60 * 60, // 1 hour
     refetchOnWindowFocus: false,
   });
 
-  console.log('Processed M2 supply data:', { count: rawData?.length, sample: rawData?.[0] });
+  const processedData: M2DataPoint[] = rawData?.map(item => ({
+    date: item.date,
+    m2Supply: item.tvl // Map TVL to m2Supply for backward compatibility
+  })) || [];
+
+  console.log('Processed Bitcoin TVL data:', { count: processedData.length, sample: processedData[0] });
 
   return {
-    data: rawData || [],
+    data: processedData,
     loading: isLoading,
     error
   };
