@@ -1301,17 +1301,6 @@ const TradingDashboard = () => {
               Learn
             </Button>
             
-            <Button 
-              onClick={() => {
-                fetchBinanceData();
-                refetchFearGreed();
-              }}
-              disabled={loading}
-              className="bg-gradient-primary shadow-trading"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Loading...' : 'Refresh'}
-            </Button>
           </div>
         </div>
 
