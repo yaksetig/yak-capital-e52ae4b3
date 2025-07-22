@@ -239,8 +239,21 @@ const TradingDashboard = () => {
         />
 
         <ChartControls 
-          setChartHeight={setChartHeight}
-          setYAxisDomain={setYAxisDomain}
+          yAxisPadding={10}
+          onYAxisPaddingChange={() => {}}
+          autoFit={true}
+          onAutoFitChange={() => {}}
+          onPriceRangeChange={() => {}}
+          chartHeight={chartHeight}
+          onChartHeightChange={setChartHeight}
+          visibleLines={{}}
+          onLineVisibilityChange={() => {}}
+          showCycleAnalysis={false}
+          onCycleAnalysisChange={() => {}}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+          onResetZoom={() => {}}
+          onFocusRecent={() => {}}
         />
       </div>
     </div>
