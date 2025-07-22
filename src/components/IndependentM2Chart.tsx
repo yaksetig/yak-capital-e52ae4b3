@@ -1,5 +1,4 @@
-
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
 import TimeRangeSelector from './TimeRangeSelector';
@@ -30,29 +29,11 @@ const IndependentM2Chart: React.FC<IndependentM2ChartProps> = ({
 }) => {
   const { data: m2Data, loading: m2Loading, error: m2Error } = useM2GlobalData();
 
-  // Combine price data with M2 data
-  const combinedM2Data = useMemo(() => {
-    if (!filteredChartData.length || !m2Data.length) return filteredChartData;
-    
-    return filteredChartData.map(pricePoint => {
-      const m2Point = m2Data.find(m2 => {
-        const priceDate = new Date(pricePoint.date).toDateString();
-        const m2Date = new Date(m2.date).toDateString();
-        return priceDate === m2Date;
-      });
-
-      return {
-        ...pricePoint,
-        m2Supply: m2Point?.m2Supply || null
-      };
-    });
-  }, [filteredChartData, m2Data]);
-
   return (
     <Card className="p-6 mb-8 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2 Supply)</h2>
+          <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2) - Independent</h2>
           {m2Loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
         </div>
         <TimeRangeSelector 
@@ -69,7 +50,7 @@ const IndependentM2Chart: React.FC<IndependentM2ChartProps> = ({
       
       <div className={`bg-chart-bg rounded-lg p-4`} style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={combinedM2Data}>
+          <ComposedChart data={filteredChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
             <XAxis 
               dataKey="date" 
@@ -92,7 +73,7 @@ const IndependentM2Chart: React.FC<IndependentM2ChartProps> = ({
             <Tooltip 
               formatter={(value, name) => {
                 if (name === 'Price') return [formatPrice(Number(value)), name];
-                if (name === 'M2 Supply') return [formatM2Supply(Number(value)), name];
+                if (name === 'TVL') return [formatM2Supply(Number(value)), name];
                 return [value, name];
               }}
               labelFormatter={(label) => `Date: ${formatDate(label)}`}
@@ -116,14 +97,14 @@ const IndependentM2Chart: React.FC<IndependentM2ChartProps> = ({
               isAnimationActive={false} 
             />
             
-            {combinedM2Data.some(d => d.m2Supply) && (
+            {filteredChartData.some(d => d.m2Supply) && (
               <Line 
                 yAxisId="m2"
                 type="monotone" 
                 dataKey="m2Supply" 
                 stroke="hsl(var(--chart-2))" 
                 strokeWidth={2} 
-                name="M2 Supply" 
+                name="TVL" 
                 dot={false} 
                 isAnimationActive={false}
                 connectNulls={false}
