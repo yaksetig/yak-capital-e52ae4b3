@@ -1292,14 +1292,6 @@ const TradingDashboard = () => {
               <option value="1w">1 Week</option>
             </select>
             
-            <Button 
-              onClick={() => setShowEducation(!showEducation)}
-              variant="outline"
-              className="gap-2"
-            >
-              <BookOpen className="w-4 h-4" />
-              Learn
-            </Button>
             
           </div>
         </div>
