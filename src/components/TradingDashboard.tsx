@@ -1101,13 +1101,13 @@ const TradingDashboard = () => {
         }
         
         const basePrice = chartData[chartData.length - 1].price;
-        if (proj.cycleId === 'cycle-0' && Math.abs(proj.value) > basePrice * 0.001) {
+        if (proj.cycleId === 'cycle-0') {
           acc[proj.timestamp].cycle0 = basePrice + proj.value;
         }
-        if (proj.cycleId === 'cycle-1' && Math.abs(proj.value) > basePrice * 0.001) {
+        if (proj.cycleId === 'cycle-1') {
           acc[proj.timestamp].cycle1 = basePrice + proj.value;
         }
-        if (proj.cycleId === 'cycle-2' && Math.abs(proj.value) > basePrice * 0.001) {
+        if (proj.cycleId === 'cycle-2') {
           acc[proj.timestamp].cycle2 = basePrice + proj.value;
         }
         
