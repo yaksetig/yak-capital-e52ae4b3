@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from "@/components/ui/card"
 import { 
@@ -16,12 +17,25 @@ import { format, parseISO } from 'date-fns';
 import TimeRangeSelector from './TimeRangeSelector';
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatPrice, formatPriceShort } from '@/lib/utils';
+import NewsSection from './NewsSection';
+import AIRecommendationSection from './AIRecommendationSection';
+import MACDChart from './MACDChart';
+import StochasticChart from './StochasticChart';
+import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
+import CycleAnalysisPanel from './CycleAnalysisPanel';
+import InfoCard from './InfoCard';
 
 // Define a type for the chart data
 interface ChartData {
   date: string;
-  price: number;
-  m2Supply: number;
+  price: number | null;
+  m2Supply: number | null;
+  rsi?: number | null;
+  macd?: number | null;
+  macdSignal?: number | null;
+  macdHistogram?: number | null;
+  stochK?: number | null;
+  stochD?: number | null;
 }
 
 // Function to format the date for the chart
@@ -46,9 +60,62 @@ const formatM2Supply = (value: number) => {
   return value.toFixed(2);
 };
 
+// Technical indicator calculations
+const calculateRSI = (prices: number[], period: number = 14) => {
+  if (prices.length < period + 1) return null;
+  
+  const changes = prices.slice(1).map((price, i) => price - prices[i]);
+  const gains = changes.map(change => change > 0 ? change : 0);
+  const losses = changes.map(change => change < 0 ? -change : 0);
+  
+  const avgGain = gains.slice(-period).reduce((sum, gain) => sum + gain, 0) / period;
+  const avgLoss = losses.slice(-period).reduce((sum, loss) => sum + loss, 0) / period;
+  
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+};
+
+const calculateMACD = (prices: number[], fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9) => {
+  if (prices.length < slowPeriod) return { macd: null, signal: null, histogram: null };
+  
+  const ema = (data: number[], period: number) => {
+    const multiplier = 2 / (period + 1);
+    let ema = data[0];
+    for (let i = 1; i < data.length; i++) {
+      ema = (data[i] * multiplier) + (ema * (1 - multiplier));
+    }
+    return ema;
+  };
+  
+  const fastEMA = ema(prices.slice(-fastPeriod), fastPeriod);
+  const slowEMA = ema(prices.slice(-slowPeriod), slowPeriod);
+  const macdValue = fastEMA - slowEMA;
+  
+  // For signal line, we'd need historical MACD values
+  const signal = macdValue * 0.9; // Simplified
+  const histogram = macdValue - signal;
+  
+  return { macd: macdValue, signal, histogram };
+};
+
+const calculateStochastic = (highs: number[], lows: number[], closes: number[], kPeriod: number = 14, dPeriod: number = 3) => {
+  if (closes.length < kPeriod) return { k: null, d: null };
+  
+  const recentHigh = Math.max(...highs.slice(-kPeriod));
+  const recentLow = Math.min(...lows.slice(-kPeriod));
+  const currentClose = closes[closes.length - 1];
+  
+  const k = ((currentClose - recentLow) / (recentHigh - recentLow)) * 100;
+  const d = k * 0.9; // Simplified moving average
+  
+  return { k, d };
+};
+
 const TradingDashboard = () => {
   // State for time range selection
-  const [timeRange, setTimeRange] = useState('1y'); // Default time range
+  const [timeRange, setTimeRange] = useState('1y');
+  const [showCycleAnalysis, setShowCycleAnalysis] = useState(false);
 
   // Fetch Bitcoin price data
   const { data: bitcoinPriceData, loading: priceLoading, error: priceError } = useBitcoinPrice();
@@ -62,12 +129,11 @@ const TradingDashboard = () => {
   // Update chart height on window resize
   useEffect(() => {
     const handleResize = () => {
-      // You can adjust the height calculation based on your needs
       setChartHeight(window.innerWidth < 640 ? 300 : 400);
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial calculation
+    handleResize();
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -82,25 +148,25 @@ const TradingDashboard = () => {
     let startDate: Date;
 
     switch (range) {
-      case '1w':
+      case '7':
         startDate = new Date(now.setDate(now.getDate() - 7));
         break;
-      case '1m':
+      case '30':
         startDate = new Date(now.setMonth(now.getMonth() - 1));
         break;
-      case '3m':
-        startDate = new Date(now.setMonth(now.getMonth() - 3));
+      case '60':
+        startDate = new Date(now.setDate(now.getDate() - 60));
         break;
-      case '6m':
-        startDate = new Date(now.setMonth(now.getMonth() - 6));
+      case '90':
+        startDate = new Date(now.setMonth(now.getMonth() - 3));
         break;
       case '1y':
         startDate = new Date(now.setFullYear(now.getFullYear() - 1));
         break;
       case 'all':
-        return data; // Show all data
+        return data;
       default:
-        return data; // Default to showing all data
+        return data;
     }
 
     return data.filter(item => {
@@ -111,70 +177,67 @@ const TradingDashboard = () => {
 
   // Combine and process data for the chart
   const chartData: ChartData[] = React.useMemo(() => {
-    if (!bitcoinPriceData || !m2Data) return [];
+    console.log('Processing chart data...', { 
+      bitcoinPriceData: bitcoinPriceData?.length, 
+      m2Data: m2Data?.length 
+    });
 
-    // Convert both datasets to a common format and ensure they are sorted
-    const priceData = bitcoinPriceData.map(item => ({
-      date: item.date,
-      price: item.price,
-    }));
-
-    const m2SupplyData = m2Data.map(item => ({
-      date: item.date,
-      m2Supply: item.m2Supply,
-    }));
-
-    // Merge the datasets based on the date
-    const combinedData: ChartData[] = [];
-    let i = 0, j = 0;
-
-    while (i < priceData.length && j < m2SupplyData.length) {
-      if (priceData[i].date === m2SupplyData[j].date) {
-        combinedData.push({
-          date: priceData[i].date,
-          price: priceData[i].price,
-          m2Supply: m2SupplyData[j].m2Supply,
-        });
-        i++;
-        j++;
-      } else if (priceData[i].date < m2SupplyData[j].date) {
-        combinedData.push({
-          date: priceData[i].date,
-          price: priceData[i].price,
-          m2Supply: null,
-        });
-        i++;
-      } else {
-        combinedData.push({
-          date: m2SupplyData[j].date,
-          price: null,
-          m2Supply: m2SupplyData[j].m2Supply,
-        });
-        j++;
-      }
+    if (!bitcoinPriceData || bitcoinPriceData.length === 0) {
+      console.log('No Bitcoin price data available');
+      return [];
     }
 
-    // Add any remaining price data
-    while (i < priceData.length) {
-      combinedData.push({
-        date: priceData[i].date,
-        price: priceData[i].price,
-        m2Supply: null,
+    if (!m2Data || m2Data.length === 0) {
+      console.log('No M2 data available');
+      return [];
+    }
+
+    // Create a map of M2 data by date for faster lookup
+    const m2DataMap = new Map();
+    m2Data.forEach(item => {
+      m2DataMap.set(item.date, item.m2Supply);
+    });
+
+    // Process Bitcoin data and add technical indicators
+    const processedData: ChartData[] = [];
+    const prices: number[] = [];
+    
+    bitcoinPriceData.forEach((priceItem, index) => {
+      prices.push(priceItem.price);
+      
+      // Get M2 supply for this date (or closest date)
+      const m2Supply = m2DataMap.get(priceItem.date) || null;
+      
+      // Calculate technical indicators
+      const rsi = index >= 14 ? calculateRSI(prices.slice(Math.max(0, index - 13), index + 1)) : null;
+      const macdData = index >= 26 ? calculateMACD(prices.slice(Math.max(0, index - 25), index + 1)) : { macd: null, signal: null, histogram: null };
+      const stochData = index >= 14 ? calculateStochastic(
+        prices.slice(Math.max(0, index - 13), index + 1), // Using price as proxy for high/low
+        prices.slice(Math.max(0, index - 13), index + 1),
+        prices.slice(Math.max(0, index - 13), index + 1)
+      ) : { k: null, d: null };
+      
+      processedData.push({
+        date: priceItem.date,
+        price: priceItem.price,
+        m2Supply,  
+        rsi,
+        macd: macdData.macd,
+        macdSignal: macdData.signal,
+        macdHistogram: macdData.histogram,
+        stochK: stochData.k,
+        stochD: stochData.d
       });
-      i++;
-    }
+    });
 
-    // Add any remaining M2 supply data
-    while (j < m2SupplyData.length) {
-      combinedData.push({
-        date: m2SupplyData[j].date,
-        price: null,
-        m2Supply: m2SupplyData[j].m2Supply,
-      });
-      j++;
-    }
+    console.log('Chart data processed:', { 
+      totalPoints: processedData.length, 
+      withPrice: processedData.filter(d => d.price !== null).length,
+      withM2: processedData.filter(d => d.m2Supply !== null).length,
+      sample: processedData[0]
+    });
 
-    return combinedData;
+    return processedData;
   }, [bitcoinPriceData, m2Data]);
 
   // Filter chart data based on the selected time range
@@ -189,27 +252,37 @@ const TradingDashboard = () => {
     }
 
     const prices = filteredChartData.map(item => item.price).filter(price => typeof price === 'number') as number[];
+    if (prices.length === 0) return [0, 'auto'];
+    
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
 
-    // Add some padding to the domain
-    const padding = (maxPrice - minPrice) * 0.05; // 5% padding
+    const padding = (maxPrice - minPrice) * 0.05;
     return [minPrice - padding, maxPrice + padding];
   }, [filteredChartData]);
+
+  // Get current market data for AI recommendations
+  const currentData = filteredChartData.length > 0 ? filteredChartData[filteredChartData.length - 1] : null;
+  const marketData = currentData ? {
+    price: currentData.price || undefined,
+    rsi: currentData.rsi || undefined,
+    macd: currentData.macd && currentData.macdSignal ? 
+      (currentData.macd > currentData.macdSignal ? 'BUY' : 'SELL') : undefined
+  } : undefined;
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Bitcoin Price vs. M2 Money Supply</h1>
-        <p className="text-muted-foreground">Visualizing the relationship between Bitcoin price and global liquidity.</p>
+        <h1 className="text-3xl font-bold text-foreground">Bitcoin Trading Dashboard</h1>
+        <p className="text-muted-foreground">Comprehensive analysis of Bitcoin price movements, technical indicators, and market data.</p>
       </header>
 
-      {/* Price vs Global Liquidity (M2) Chart - Replica */}
+      {/* Main Price vs M2 Chart */}
       <Card className="p-6 mb-8 shadow-card border-border">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2)</h2>
-            {m2Loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
+            <h2 className="text-xl font-semibold text-foreground">Bitcoin Price vs Global Liquidity (M2)</h2>
+            {(priceLoading || m2Loading) && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
           </div>
           <TimeRangeSelector 
             selectedRange={timeRange}
@@ -217,9 +290,13 @@ const TradingDashboard = () => {
           />
         </div>
         
-        {m2Error && (
+        {(priceError || m2Error) && (
           <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <p className="text-sm text-destructive">Failed to load M2 data: {m2Error.message}</p>
+            <p className="text-sm text-destructive">
+              {priceError && `Price data error: ${priceError.message}`}
+              {priceError && m2Error && ' | '}
+              {m2Error && `M2 data error: ${m2Error.message}`}
+            </p>
           </div>
         )}
         
@@ -267,9 +344,10 @@ const TradingDashboard = () => {
                 dataKey="price" 
                 stroke="hsl(var(--foreground))" 
                 strokeWidth={3} 
-                name="Price" 
+                name="Bitcoin Price" 
                 dot={false} 
                 isAnimationActive={false} 
+                connectNulls={false}
               />
               
               {filteredChartData.some(d => d.m2Supply) && (
@@ -290,8 +368,41 @@ const TradingDashboard = () => {
         </div>
       </Card>
 
-      {/* Additional charts or indicators can be added here */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Cycle Analysis Panel */}
+      <CycleAnalysisPanel 
+        cycles={[]}
+        cycleStrength={0}
+        isVisible={showCycleAnalysis}
+      />
+
+      {/* Technical Analysis Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <MACDChart 
+          chartData={filteredChartData}
+          chartHeight={chartHeight}
+          formatDate={formatDate}
+        />
+        
+        <StochasticChart 
+          chartData={filteredChartData}
+          chartHeight={chartHeight}
+          formatDate={formatDate}
+        />
+      </div>
+
+      {/* Time Series Momentum Chart */}
+      <div className="mb-8">
+        <TimeSeriesMomentumChart 
+          chartData={filteredChartData}
+          chartHeight={chartHeight}
+          formatDate={formatDate}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+        />
+      </div>
+
+      {/* Market Data Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Card className="p-4 shadow-card border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Bitcoin Price</h3>
           {priceLoading ? (
@@ -299,7 +410,10 @@ const TradingDashboard = () => {
           ) : priceError ? (
             <p className="text-sm text-destructive">Failed to load price data.</p>
           ) : (
-            <p className="text-2xl font-bold text-primary">{bitcoinPriceData && bitcoinPriceData.length > 0 ? formatPrice(bitcoinPriceData[bitcoinPriceData.length - 1].price) : 'N/A'}</p>
+            <p className="text-2xl font-bold text-primary">
+              {bitcoinPriceData && bitcoinPriceData.length > 0 ? 
+                formatPrice(bitcoinPriceData[bitcoinPriceData.length - 1].price) : 'N/A'}
+            </p>
           )}
         </Card>
 
@@ -310,11 +424,54 @@ const TradingDashboard = () => {
           ) : m2Error ? (
             <p className="text-sm text-destructive">Failed to load M2 data.</p>
           ) : (
-            <p className="text-2xl font-bold text-primary">{m2Data && m2Data.length > 0 ? formatM2Supply(m2Data[m2Data.length - 1].m2Supply) : 'N/A'}</p>
+            <p className="text-2xl font-bold text-primary">
+              {m2Data && m2Data.length > 0 ? 
+                formatM2Supply(m2Data[m2Data.length - 1].m2Supply) : 'N/A'}
+            </p>
           )}
         </Card>
 
-        {/* Add more indicator cards as needed */}
+        <Card className="p-4 shadow-card border-border">
+          <h3 className="text-lg font-semibold text-foreground mb-2">RSI (14)</h3>
+          <p className="text-2xl font-bold text-primary">
+            {currentData?.rsi ? currentData.rsi.toFixed(2) : 'N/A'}
+          </p>
+          {currentData?.rsi && (
+            <p className={`text-sm mt-1 ${currentData.rsi > 70 ? 'text-red-600' : currentData.rsi < 30 ? 'text-green-600' : 'text-muted-foreground'}`}>
+              {currentData.rsi > 70 ? 'Overbought' : currentData.rsi < 30 ? 'Oversold' : 'Neutral'}
+            </p>
+          )}
+        </Card>
+      </div>
+
+      {/* News and AI Recommendations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <NewsSection symbol="CRYPTO:BTC" />
+        <AIRecommendationSection symbol="BTC" marketData={marketData} />
+      </div>
+
+      {/* Educational Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <InfoCard
+          title="What is M2 Money Supply?"
+          shortDescription="M2 includes cash, checking deposits, and easily convertible near money."
+          detailedExplanation="M2 is a measure of the money supply that includes cash, checking deposits, savings deposits, money market securities, mutual funds, and other time deposits. It represents the total amount of money in circulation plus liquid assets that can quickly be converted to cash."
+          tradingTip="When M2 supply increases rapidly, it often leads to inflation concerns and can drive investors toward Bitcoin as a hedge against currency debasement."
+        />
+        
+        <InfoCard
+          title="Bitcoin-M2 Correlation"
+          shortDescription="How Bitcoin price relates to global liquidity measures."
+          detailedExplanation="The relationship between Bitcoin and M2 money supply suggests that as central banks increase money supply (quantitative easing), Bitcoin often appreciates as investors seek alternatives to fiat currency. This correlation became more pronounced after 2020."
+          tradingTip="Watch for periods of rapid M2 expansion as potential buying opportunities for Bitcoin, especially when combined with other bullish technical indicators."
+        />
+        
+        <InfoCard
+          title="Technical Analysis"
+          shortDescription="Using indicators like MACD, RSI, and Stochastic for trading decisions."
+          detailedExplanation="Technical analysis combines multiple indicators to identify entry and exit points. MACD shows momentum changes, RSI indicates overbought/oversold conditions, and Stochastic helps confirm trend reversals."
+          tradingTip="Never rely on a single indicator. Use multiple confirmations and always consider the broader market context including macroeconomic factors like M2 supply."
+        />
       </div>
     </div>
   );
