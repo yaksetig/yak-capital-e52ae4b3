@@ -69,14 +69,14 @@ const TradingDashboard = () => {
           <h2 className="text-xl font-semibold text-foreground">M2 Money Supply vs Bitcoin Price</h2>
           {(m2Loading || tvlLoading) && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
         </div>
-        <TimeRangeSelector setTimeRange={setTimeRange} timeRange={timeRange} />
+        <TimeRangeSelector selectedRange={timeRange} onRangeChange={setTimeRange} />
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={filteredChartData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="date" tickFormatter={formatDate} className="text-xs text-muted-foreground" />
             <YAxis yAxisId="left" tickFormatter={(value) => `$${value / 1000}K`} className="text-xs text-muted-foreground" />
             <YAxis yAxisId="right" orientation="right" tickFormatter={formatPrice} className="text-xs text-muted-foreground" />
-            <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+            <Tooltip formatter={(value) => `$${typeof value === 'number' ? value.toFixed(2) : value}`} />
             <Legend />
             <Line yAxisId="left" type="monotone" dataKey="m2Supply" stroke="#8884d8" name="M2 Money Supply (K)" />
             <Line yAxisId="right" type="monotone" dataKey="btcPrice" stroke="#82ca9d" name="Bitcoin Price" />
@@ -104,14 +104,14 @@ const TradingDashboard = () => {
           {(m2Loading || tvlLoading) && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
         </div>
         
-        <TimeRangeSelector setTimeRange={setTimeRange} timeRange={timeRange} />
+        <TimeRangeSelector selectedRange={timeRange} onRangeChange={setTimeRange} />
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={filteredChartData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="date" tickFormatter={formatDate} className="text-xs text-muted-foreground" />
             <YAxis yAxisId="left" tickFormatter={formatTVL} className="text-xs text-muted-foreground" />
             <YAxis yAxisId="right" orientation="right" tickFormatter={formatPrice} className="text-xs text-muted-foreground" />
-            <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+            <Tooltip formatter={(value) => `$${typeof value === 'number' ? value.toFixed(2) : value}`} />
             <Legend />
             <Line yAxisId="left" type="monotone" dataKey="tvl" stroke="#8884d8" name="Total Value Locked (TVL)" />
             <Line yAxisId="right" type="monotone" dataKey="btcPrice" stroke="#82ca9d" name="Bitcoin Price" />
@@ -121,7 +121,7 @@ const TradingDashboard = () => {
 
       <Card className="p-6 shadow-card border-border">
         <h2 className="text-xl font-semibold text-foreground mb-4">Combined Data Table</h2>
-        <TimeRangeSelector setTimeRange={setTimeRange} timeRange={timeRange} />
+        <TimeRangeSelector selectedRange={timeRange} onRangeChange={setTimeRange} />
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border">
             <thead>
