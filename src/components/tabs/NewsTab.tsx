@@ -15,7 +15,7 @@ const NewsTab: React.FC<NewsTabProps> = ({ symbol }) => {
         </p>
       </div>
       
-      <NewsSection ticker={symbol} />
+      <NewsSection symbol={symbol} />
     </div>
   );
 };
