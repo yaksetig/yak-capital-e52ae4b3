@@ -689,18 +689,50 @@ const TradingDashboard = () => {
   const fetchBinanceData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(
         `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${LOOKBACK_DAYS}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      setRawData(data);
+
+      // Fetch the most recent price and volume so the chart reflects the latest value
+      const tickerResp = await fetch(
+        `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`
+      );
+
+      if (!tickerResp.ok) {
+        throw new Error(`HTTP error! status: ${tickerResp.status}`);
+      }
+
+      const tickerData = await tickerResp.json();
+      const latestPrice = parseFloat(tickerData.lastPrice);
+      const latestVolume = tickerData.volume ?? '0';
+
+      // Append a candle-like entry using the latest price and current timestamp
+      const now = Date.now();
+      const latestCandle = [
+        now,
+        latestPrice.toString(), // open
+        latestPrice.toString(), // high
+        latestPrice.toString(), // low
+        latestPrice.toString(), // close
+        latestVolume.toString(), // volume
+        now,
+        '0',
+        0,
+        '0',
+        '0',
+        '0'
+      ];
+
+      const combinedData = [...data, latestCandle];
+      setRawData(combinedData);
     } catch (err) {
       setError(`Failed to fetch data: ${err.message}`);
       console.error('Error fetching Binance data:', err);
