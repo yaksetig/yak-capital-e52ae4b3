@@ -20,6 +20,7 @@ import StochasticChart from './StochasticChart';
 import WilliamsRChart from './WilliamsRChart';
 import IndependentM2Chart from './IndependentM2Chart';
 import PriceVolumeChart from './PriceVolumeChart';
+import OBVChart from './OBVChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
@@ -186,6 +187,31 @@ const TradingDashboard = () => {
     }
     
     return vwapArray;
+  };
+
+  // Helper function to calculate On-Balance Volume (OBV)
+  const calculateOBVArray = (candles) => {
+    if (candles.length === 0) return [];
+
+    const obvArray = [];
+    let obv = 0;
+    obvArray.push(obv);
+
+    for (let i = 1; i < candles.length; i++) {
+      const prevClose = parseFloat(candles[i - 1][4]);
+      const close = parseFloat(candles[i][4]);
+      const volume = parseFloat(candles[i][5]);
+
+      if (close > prevClose) {
+        obv += volume;
+      } else if (close < prevClose) {
+        obv -= volume;
+      }
+
+      obvArray.push(obv);
+    }
+
+    return obvArray;
   };
 
   const calculateSMA = (prices, period, offset = 0) => {
@@ -1001,8 +1027,9 @@ const TradingDashboard = () => {
     
     const daysToShow = getDaysToShow(timeRange);
     const chartDataSlice = rawData.slice(-daysToShow);
-    
+
     const vwapArray = calculateVWAPArray(chartDataSlice);
+    const obvArrayFull = calculateOBVArray(rawData);
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
     const cciArray = calculateCCIArray(rawData, CCI_PERIOD);
@@ -1084,6 +1111,7 @@ const TradingDashboard = () => {
         stochK: stochArrayPoint ? stochArrayPoint.stochK : null,
         stochD: stochArrayPoint ? stochArrayPoint.stochD : null,
         adx: adxPoint ? adxPoint.adx : null,
+        obv: obvArrayFull[fullDataIndex],
         priceZScore: priceZScoreArray.length > index ? priceZScoreArray[priceZScoreArray.length - daysToShow + index] : null,
         volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - daysToShow + index] : null,
         williamsR: (function() {
@@ -1967,12 +1995,19 @@ const TradingDashboard = () => {
                   <ReferenceLine y={2} stroke="hsl(var(--bullish))" strokeDasharray="2 2" label="Strong Interest" />
                   <ReferenceLine y={1} stroke="hsl(var(--neutral))" strokeDasharray="2 2" label="Above Average" />
                   <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="1 1" label="Average" />
-                  <ReferenceLine y={-1} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Low Activity" />
-                  <Line type="monotone" dataKey="volumeZScore" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Volume Z-Score" dot={false} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+          <ReferenceLine y={-1} stroke="hsl(var(--bearish))" strokeDasharray="2 2" label="Low Activity" />
+          <Line type="monotone" dataKey="volumeZScore" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Volume Z-Score" dot={false} isAnimationActive={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </Card>
+
+          <OBVChart
+            chartData={chartData}
+            chartHeight={chartHeight}
+            formatDate={formatDate}
+            formatPriceShort={formatPriceShort}
+          />
 
           {/* Stochastic Chart - Separated with its own parameters */}
           <StochasticChart
