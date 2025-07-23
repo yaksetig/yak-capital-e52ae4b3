@@ -1695,6 +1695,55 @@ const TradingDashboard = () => {
                 </ResponsiveContainer>
               </div>
             </Card>
+
+            {/* Moving Averages Table */}
+            <Card className="p-6 shadow-card border-border">
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Moving Averages Summary</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 font-semibold text-muted-foreground">Period</th>
+                      <th className="text-left p-3 font-semibold text-muted-foreground">SMA</th>
+                      <th className="text-left p-3 font-semibold text-muted-foreground">EMA</th>
+                      <th className="text-left p-3 font-semibold text-muted-foreground">Price vs SMA</th>
+                      <th className="text-left p-3 font-semibold text-muted-foreground">Price vs EMA</th>
+                      <th className="text-left p-3 font-semibold text-muted-foreground">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[5, 20, 50, 100, 200].map(period => (
+                      <tr key={period} className="border-b border-border hover:bg-muted/50">
+                        <td className="p-3 font-medium">{period}</td>
+                        <td className="p-3">{formatPrice(indicators[`sma${period}`])}</td>
+                        <td className="p-3">{formatPrice(indicators[`ema${period}`])}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded text-sm font-medium ${
+                            indicators.currentPrice > indicators[`sma${period}`]
+                              ? 'bg-bullish/20 text-bullish'
+                              : 'bg-bearish/20 text-bearish'
+                          }`}>
+                            {indicators.currentPrice > indicators[`sma${period}`] ? 'Above' : 'Below'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded text-sm font-medium ${
+                            indicators.currentPrice > indicators[`ema${period}`]
+                              ? 'bg-bullish/20 text-bullish'
+                              : 'bg-bearish/20 text-bearish'
+                          }`}>
+                            {indicators.currentPrice > indicators[`ema${period}`] ? 'Above' : 'Below'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-lg">
+                          {indicators.currentPrice > indicators[`sma${period}`] ? '🐂' : '🐻'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </>
         ) : currentView === 'technical' ? (
           <>
@@ -2103,50 +2152,6 @@ const TradingDashboard = () => {
         </div>
 
 
-        {/* Moving Averages Table */}
-        <Card className="p-6 shadow-card border-border">
-          <h2 className="text-xl font-semibold mb-4 text-foreground">Moving Averages Summary</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Period</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">SMA</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">EMA</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Price vs SMA</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Price vs EMA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[5, 20, 50, 100, 200].map(period => (
-                  <tr key={period} className="border-b border-border hover:bg-muted/50">
-                    <td className="p-3 font-medium">{period}</td>
-                    <td className="p-3">{formatPrice(indicators[`sma${period}`])}</td>
-                    <td className="p-3">{formatPrice(indicators[`ema${period}`])}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-sm font-medium ${
-                        indicators.currentPrice > indicators[`sma${period}`] 
-                          ? 'bg-bullish/20 text-bullish' 
-                          : 'bg-bearish/20 text-bearish'
-                      }`}>
-                        {indicators.currentPrice > indicators[`sma${period}`] ? 'Above' : 'Below'}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-sm font-medium ${
-                        indicators.currentPrice > indicators[`ema${period}`] 
-                          ? 'bg-bullish/20 text-bullish' 
-                          : 'bg-bearish/20 text-bearish'
-                      }`}>
-                        {indicators.currentPrice > indicators[`ema${period}`] ? 'Above' : 'Below'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
 
 
           </>
