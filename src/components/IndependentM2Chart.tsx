@@ -55,6 +55,10 @@ const IndependentM2Chart = () => {
         <div className="flex items-center gap-2">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Price vs Global Liquidity (M2) - Complete Historical Data</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Tracks Bitcoin’s price alongside the world’s M2 money supply to
+              explore how broad liquidity trends relate to market cycles.
+            </p>
             <div className="mt-2 p-2 bg-muted/50 rounded-lg">
               <div className="text-sm">
                 <span className="text-muted-foreground">Correlation: </span>
