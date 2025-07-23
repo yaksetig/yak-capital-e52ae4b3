@@ -69,6 +69,25 @@ const ChartControls: React.FC<ChartControlsProps> = ({
   return (
     <Card className="p-4 mb-4 space-y-4">
       <div className="flex flex-wrap gap-4 items-center">
+        {/* Zoom Controls */}
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={onZoomIn}>
+            <ZoomIn className="w-4 h-4 mr-1" />
+            Zoom In
+          </Button>
+          <Button size="sm" variant="outline" onClick={onZoomOut}>
+            <ZoomOut className="w-4 h-4 mr-1" />
+            Zoom Out
+          </Button>
+          <Button size="sm" variant="outline" onClick={onResetZoom}>
+            <RotateCcw className="w-4 h-4 mr-1" />
+            Reset
+          </Button>
+          <Button size="sm" variant="outline" onClick={onFocusRecent}>
+            <Maximize2 className="w-4 h-4 mr-1" />
+            Focus Recent
+          </Button>
+        </div>
 
         {/* Y-Axis Controls */}
         <div className="flex gap-2 items-center">
