@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot, ExternalLink, AlertCircle } from 'lucide-react';
 import AIRecommendationSection from './AIRecommendationSection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import LearnSection from './LearnSection';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InfoCard from './InfoCard';
 import TimeRangeSelector from './TimeRangeSelector';
@@ -1214,38 +1215,6 @@ const TradingDashboard = () => {
     }
   };
 
-  const educationalContent = [
-    {
-      title: "Moving Averages (SMA/EMA)",
-      shortDescription: "Trend direction and momentum indicators",
-      detailedExplanation: "Simple Moving Average (SMA) calculates the average price over a specific period, while Exponential Moving Average (EMA) gives more weight to recent prices. They help identify trend direction and potential support/resistance levels.",
-      tradingTip: "When price is above the moving average, it suggests an uptrend. Golden Cross (SMA 50 > SMA 200) is a bullish signal, while Death Cross is bearish."
-    },
-    {
-      title: "RSI (Relative Strength Index)",
-      shortDescription: "Momentum oscillator measuring overbought/oversold conditions",
-      detailedExplanation: "RSI ranges from 0-100. Values above 70 typically indicate overbought conditions (potential sell signal), while values below 30 suggest oversold conditions (potential buy signal). RSI also shows momentum and can indicate trend strength.",
-      tradingTip: "Look for RSI divergences with price action. If price makes new highs but RSI doesn't, it may signal weakening momentum."
-    },
-    {
-      title: "MACD (Moving Average Convergence Divergence)",
-      shortDescription: "Trend-following momentum indicator",
-      detailedExplanation: "MACD consists of three components: MACD line (12 EMA - 26 EMA), Signal line (9 EMA of MACD), and Histogram (MACD - Signal). It helps identify trend changes and momentum shifts.",
-      tradingTip: "Buy signals occur when MACD crosses above the signal line, and sell signals when it crosses below. The histogram shows the strength of the signal."
-    },
-    {
-      title: "Bollinger Bands",
-      shortDescription: "Volatility bands showing price channels",
-      detailedExplanation: "Bollinger Bands consist of a middle line (20 SMA) and two outer bands (±2 standard deviations). They expand and contract based on market volatility, helping identify overbought/oversold conditions and potential breakouts.",
-      tradingTip: "Prices tend to bounce between the bands. When bands squeeze together, it often precedes a significant price move."
-    },
-    {
-      title: "Z-Score Analysis",
-      shortDescription: "Statistical measure of how far a value deviates from the mean",
-      detailedExplanation: "Z-Score measures how many standard deviations a current value is from the historical average. Values above +2 or below -2 indicate statistically extreme conditions that may signal reversals or continuation patterns.",
-      tradingTip: "Use Z-scores to identify when prices, volume, or indicators are at extreme levels. High volume Z-scores confirm price moves, while extreme price Z-scores may signal reversal opportunities."
-    }
-  ];
 
   if (loading) {
     return (
@@ -2025,122 +1994,7 @@ const TradingDashboard = () => {
         </div>
           </>
         ) : currentView === 'learn' ? (
-          <>
-          {/* Learn View */}
-          <div className="space-y-6">
-            <Card className="p-6 shadow-card border-border">
-              <h2 className="text-2xl font-bold mb-6 text-foreground">Financial Education</h2>
-              
-              {/* RSI Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">RSI (Relative Strength Index)</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    The RSI is a momentum oscillator that measures the speed and change of price movements. 
-                    It ranges from 0 to 100 and is typically used to identify overbought or oversold conditions.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                      <strong className="text-green-700 dark:text-green-400">Oversold (Below 30):</strong>
-                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">Potential buying opportunity</p>
-                    </div>
-                    <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                      <strong className="text-red-700 dark:text-red-400">Overbought (Above 70):</strong>
-                      <p className="text-sm text-red-600 dark:text-red-300 mt-1">Potential selling opportunity</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bollinger Bands Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">Bollinger Bands</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    Bollinger Bands consist of a moving average (middle band) and two standard deviation lines (upper and lower bands). 
-                    They help identify volatility and potential reversal points.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                      <strong className="text-blue-700 dark:text-blue-400">Upper Band:</strong>
-                      <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">Resistance level</p>
-                    </div>
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-                      <strong className="text-yellow-700 dark:text-yellow-400">Middle Band:</strong>
-                      <p className="text-sm text-yellow-600 dark:text-yellow-300 mt-1">20-period SMA</p>
-                    </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                      <strong className="text-purple-700 dark:text-purple-400">Lower Band:</strong>
-                      <p className="text-sm text-purple-600 dark:text-purple-300 mt-1">Support level</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* MACD Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">MACD (Moving Average Convergence Divergence)</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    MACD is a trend-following momentum indicator that shows the relationship between two moving averages. 
-                    It consists of the MACD line, signal line, and histogram.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                      <strong className="text-green-700 dark:text-green-400">Bullish Signal:</strong>
-                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">MACD crosses above signal line</p>
-                    </div>
-                    <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                      <strong className="text-red-700 dark:text-red-400">Bearish Signal:</strong>
-                      <p className="text-sm text-red-600 dark:text-red-300 mt-1">MACD crosses below signal line</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Moving Averages Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-foreground">Moving Averages</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    Moving averages smooth out price data to identify trends. Common types include Simple Moving Average (SMA) 
-                    and Exponential Moving Average (EMA).
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
-                      <strong className="text-indigo-700 dark:text-indigo-400">SMA (Simple):</strong>
-                      <p className="text-sm text-indigo-600 dark:text-indigo-300 mt-1">Equal weight to all periods</p>
-                    </div>
-                    <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
-                      <strong className="text-cyan-700 dark:text-cyan-400">EMA (Exponential):</strong>
-                      <p className="text-sm text-cyan-600 dark:text-cyan-300 mt-1">More weight to recent prices</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Support and Resistance Section */}
-              <div>
-                <h3 className="text-xl font-semibold mb-4 text-foreground">Support and Resistance</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <p className="text-muted-foreground">
-                    Support and resistance levels are key concepts in technical analysis that help identify potential entry and exit points.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
-                      <strong className="text-emerald-700 dark:text-emerald-400">Support:</strong>
-                      <p className="text-sm text-emerald-600 dark:text-emerald-300 mt-1">Price level where buying pressure emerges</p>
-                    </div>
-                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
-                      <strong className="text-orange-700 dark:text-orange-400">Resistance:</strong>
-                      <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">Price level where selling pressure emerges</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-          </>
+          <LearnSection />
         ) : (
           <>
           {/* News & Market Sentiment View */}
