@@ -1579,11 +1579,15 @@ const TradingDashboard = () => {
               <h2 className="text-xl font-semibold text-foreground">Price vs TVL</h2>
               {tvlLoading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
             </div>
-            <TimeRangeSelector 
+            <TimeRangeSelector
               selectedRange={timeRange}
               onRangeChange={setTimeRange}
             />
           </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Compares Bitcoin price with total value locked in DeFi protocols to
+            highlight changes in on-chain liquidity alongside market moves.
+          </p>
           
           {tvlError && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -1832,15 +1836,19 @@ const TradingDashboard = () => {
 
           {/* NEW Price Z-Score Chart */}
           <Card className="p-6 shadow-card border-border">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-semibold text-foreground">Price Z-Score (30)</h2>
-              <TimeRangeSelector 
-                selectedRange={timeRange}
-                onRangeChange={setTimeRange}
-                className="scale-90"
-              />
-            </div>
-            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 className="text-xl font-semibold text-foreground">Price Z-Score (30)</h2>
+            <TimeRangeSelector
+              selectedRange={timeRange}
+              onRangeChange={setTimeRange}
+              className="scale-90"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Shows how far price deviates from its 30‑day average. Values above 2 or
+            below −2 highlight extreme conditions.
+          </p>
+          <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
@@ -1871,12 +1879,16 @@ const TradingDashboard = () => {
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
               <h2 className="text-xl font-semibold text-foreground">Volume Z-Score (30)</h2>
-              <TimeRangeSelector 
+              <TimeRangeSelector
                 selectedRange={timeRange}
                 onRangeChange={setTimeRange}
                 className="scale-90"
               />
             </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Highlights how current trading volume compares to its 30‑day mean
+              to spot unusual market participation.
+            </p>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>
@@ -1914,12 +1926,16 @@ const TradingDashboard = () => {
           <Card className="p-6 shadow-card border-border">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
               <h2 className="text-xl font-semibold text-foreground">ADX Trend Strength (14)</h2>
-              <TimeRangeSelector 
+              <TimeRangeSelector
                 selectedRange={timeRange}
                 onRangeChange={setTimeRange}
                 className="scale-90"
               />
             </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              The Average Directional Index gauges how strong the current trend
+              is, regardless of direction.
+            </p>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>
