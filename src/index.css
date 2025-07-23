@@ -54,6 +54,11 @@ All colors MUST be HSL.
     --chart-4: 271 81% 56%;
     --chart-5: 197 71% 73%;
 
+    /* Cycle projection colors */
+    --cycle-1: 38 100% 50%;
+    --cycle-2: 180 60% 52%;
+    --cycle-3: 262 100% 70%;
+
     /* Gradient backgrounds */
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(224 76% 48%));
     --gradient-success: linear-gradient(135deg, hsl(120 100% 35%), hsl(142 76% 36%));
@@ -106,7 +111,12 @@ All colors MUST be HSL.
     --chart-3: 38 92% 50%;
     --chart-4: 271 81% 56%;
     --chart-5: 197 71% 73%;
-    
+
+    /* Cycle projection colors */
+    --cycle-1: 38 100% 50%;
+    --cycle-2: 180 60% 52%;
+    --cycle-3: 262 100% 70%;
+
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(224 76% 48%));
     --gradient-success: linear-gradient(135deg, hsl(120 100% 35%), hsl(142 76% 36%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(348 83% 47%));
