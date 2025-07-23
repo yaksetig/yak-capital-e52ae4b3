@@ -1631,7 +1631,7 @@ const TradingDashboard = () => {
                     {/* Golden Cross / Death Cross markers */}
                     {filteredChartData.map((d, idx) => {
                       if (!d.cross) return null;
-                      const emoji = d.cross === 'golden' ? '🪙' : '💀';
+                      const emoji = d.cross === 'golden' ? '⭐️' : '💀';
                       const y =
                         d.sma50 != null && d.sma200 != null
                           ? (d.sma50 + d.sma200) / 2
