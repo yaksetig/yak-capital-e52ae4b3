@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart, Bar, ComposedChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ReferenceDot, BarChart, Bar, ComposedChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot, ExternalLink, AlertCircle } from 'lucide-react';
@@ -1096,6 +1096,28 @@ const TradingDashboard = () => {
     // Correlate TVL data with price data
     chartData = correlateTVLWithPriceData(chartData, tvlData);
 
+    // Determine Golden/Death Cross points for entire dataset
+    let prevSMA50: number | null = null;
+    let prevSMA200: number | null = null;
+    chartData = chartData.map((d: any) => {
+      let cross: 'golden' | 'death' | null = null;
+      if (
+        prevSMA50 !== null &&
+        prevSMA200 !== null &&
+        d.sma50 != null &&
+        d.sma200 != null
+      ) {
+        if (prevSMA50 < prevSMA200 && d.sma50 >= d.sma200) {
+          cross = 'golden';
+        } else if (prevSMA50 > prevSMA200 && d.sma50 <= d.sma200) {
+          cross = 'death';
+        }
+      }
+      prevSMA50 = d.sma50;
+      prevSMA200 = d.sma200;
+      return { ...d, cross };
+    });
+
     const indicators = {
       ...currentSMAs,
       ...currentEMAs,
@@ -1576,7 +1598,26 @@ const TradingDashboard = () => {
                      {/* VWAP Line with bright, visible color */}
                      {visibleLines.vwap && <Line type="monotone" dataKey="vwap" stroke="#FF6B35" strokeWidth={3} strokeDasharray="4 4" name="VWAP" dot={false} isAnimationActive={false} />}
                      
-                     {visibleLines.price && <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} isAnimationActive={false} />}
+                    {visibleLines.price && <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={3} name="Price" dot={false} isAnimationActive={false} />}
+
+                    {/* Golden Cross / Death Cross markers */}
+                    {filteredChartData.map((d, idx) => {
+                      if (!d.cross) return null;
+                      const emoji = d.cross === 'golden' ? '🪙' : '💀';
+                      const y =
+                        d.sma50 != null && d.sma200 != null
+                          ? (d.sma50 + d.sma200) / 2
+                          : d.price;
+                      return (
+                        <ReferenceDot
+                          key={`cross-${idx}`}
+                          x={d.date}
+                          y={y}
+                          r={0}
+                          label={{ position: 'top', value: emoji }}
+                        />
+                      );
+                    })}
                     
                     {/* Cycle Projection Lines with click handlers */}
                     {showCycleAnalysis && (
