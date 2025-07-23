@@ -692,13 +692,25 @@ const TradingDashboard = () => {
 
   const calculateYAxisDomain = (data, padding = 10) => {
     if (!data || data.length === 0) return ['auto', 'auto'];
-    
-    const prices = data.map(d => d.price).filter(p => p != null);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
+
+    const values: number[] = [];
+    data.forEach((d: any) => {
+      if (d.price != null) values.push(d.price);
+
+      if (showCycleAnalysis) {
+        if (d.cycle0 != null) values.push(d.cycle0);
+        if (d.cycle1 != null) values.push(d.cycle1);
+        if (d.cycle2 != null) values.push(d.cycle2);
+      }
+    });
+
+    if (values.length === 0) return ['auto', 'auto'];
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
     const range = max - min;
     const paddingAmount = (range * padding) / 100;
-    
+
     return [min - paddingAmount, max + paddingAmount];
   };
 
