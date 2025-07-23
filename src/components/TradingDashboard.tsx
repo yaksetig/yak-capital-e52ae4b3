@@ -17,6 +17,7 @@ import MACDChart from './MACDChart';
 import TimeSeriesMomentumChart from './TimeSeriesMomentumChart';
 import ROCChart from './ROCChart';
 import StochasticChart from './StochasticChart';
+import WilliamsRChart from './WilliamsRChart';
 import IndependentM2Chart from './IndependentM2Chart';
 import PriceVolumeChart from './PriceVolumeChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
@@ -88,6 +89,7 @@ const TradingDashboard = () => {
   const ADX_PERIOD = 14;
   const ZSCORE_PERIOD = 30;
   const CCI_PERIOD = 20;
+  const WILLIAMS_R_PERIOD = 10;
 
   // Dynamic RSI period based on time range
   const getRSIPeriod = (timeRange: string) => {
@@ -592,6 +594,72 @@ const TradingDashboard = () => {
     return "Extremely Low";
   };
 
+  // WILLIAMS %R FUNCTIONS
+  const calculateWilliamsR = (candles, period) => {
+    if (candles.length < period) return null;
+
+    const recent = candles.slice(-period);
+    let highestHigh = -Infinity;
+    let lowestLow = Infinity;
+
+    for (let i = 0; i < recent.length; i++) {
+      const high = parseFloat(recent[i][2]);
+      const low = parseFloat(recent[i][3]);
+      if (high > highestHigh) highestHigh = high;
+      if (low < lowestLow) lowestLow = low;
+    }
+
+    const currentClose = parseFloat(candles[candles.length - 1][4]);
+    const range = highestHigh - lowestLow;
+    return range > 0 ? ((highestHigh - currentClose) / range) * -100 : -50;
+  };
+
+  const calculateWilliamsRArray = (candles, period) => {
+    if (candles.length < period) return [];
+
+    const arr = [];
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+      let highestHigh = -Infinity;
+      let lowestLow = Infinity;
+      for (let j = 0; j < slice.length; j++) {
+        const high = parseFloat(slice[j][2]);
+        const low = parseFloat(slice[j][3]);
+        if (high > highestHigh) highestHigh = high;
+        if (low < lowestLow) lowestLow = low;
+      }
+      const close = parseFloat(candles[i][4]);
+      const range = highestHigh - lowestLow;
+      const value = range > 0 ? ((highestHigh - close) / range) * -100 : -50;
+      arr.push(value);
+    }
+    return arr;
+  };
+
+  const getWilliamsRSignal = (values) => {
+    if (!values || values.length === 0) return "Unknown";
+    const current = values[values.length - 1];
+
+    const lookback = 5;
+    for (let i = values.length - lookback - 1; i >= 0; i--) {
+      if (values[i] <= -99) {
+        if (current > -95 || current > -85) return "Buy";
+        break;
+      }
+    }
+
+    for (let i = values.length - lookback - 1; i >= 0; i--) {
+      if (values[i] >= 0) {
+        if (current < -5 || current < -15) return "Sell";
+        break;
+      }
+    }
+
+    if (current > -20) return "Overbought";
+    if (current < -80) return "Oversold";
+    return "Neutral";
+  };
+
   const fetchBinanceData = async () => {
     setLoading(true);
     setError(null);
@@ -827,6 +895,10 @@ const TradingDashboard = () => {
     }
     const atrZScore = atrArray.length >= ZSCORE_PERIOD ? calculateZScore(atrArray, ZSCORE_PERIOD) : null;
 
+    const williamsRArrayFull = calculateWilliamsRArray(rawData, WILLIAMS_R_PERIOD);
+    const currentWilliamsR = calculateWilliamsR(rawData, WILLIAMS_R_PERIOD);
+    const williamsRSignal = getWilliamsRSignal(williamsRArrayFull);
+
     const currentPrice = prices[prices.length - 1];
     
     const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
@@ -1001,7 +1073,11 @@ const TradingDashboard = () => {
         stochD: stochArrayPoint ? stochArrayPoint.stochD : null,
         adx: adxPoint ? adxPoint.adx : null,
         priceZScore: priceZScoreArray.length > index ? priceZScoreArray[priceZScoreArray.length - daysToShow + index] : null,
-        volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - daysToShow + index] : null
+        volumeZScore: volumeZScoreArray.length > index ? volumeZScoreArray[volumeZScoreArray.length - daysToShow + index] : null,
+        williamsR: (function() {
+          const idx = fullDataIndex - (WILLIAMS_R_PERIOD - 1);
+          return idx >= 0 && idx < williamsRArrayFull.length ? williamsRArrayFull[idx] : null;
+        })()
       };
     });
 
@@ -1051,7 +1127,9 @@ const TradingDashboard = () => {
       priceZScoreSignal: getZScoreSignal(priceZScore),
       volumeZScoreSignal: getZScoreSignal(volumeZScore),
       rsiZScoreSignal: getZScoreSignal(rsiZScore),
-      atrZScoreSignal: getZScoreSignal(atrZScore)
+      atrZScoreSignal: getZScoreSignal(atrZScore),
+      williamsR: currentWilliamsR,
+      williamsRSignal
     };
 
     // Cycle analysis
@@ -1885,7 +1963,13 @@ const TradingDashboard = () => {
           </Card>
 
           {/* Stochastic Chart - Separated with its own parameters */}
-          <StochasticChart 
+          <StochasticChart
+            chartData={chartData}
+            chartHeight={chartHeight}
+            formatDate={formatDate}
+          />
+
+          <WilliamsRChart
             chartData={chartData}
             chartHeight={chartHeight}
             formatDate={formatDate}
