@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, TrendingUp, TrendingDown, Activity, BookOpen, Brain, Frown, Smile, Meh, BarChart3, TrendingUp as StatisticsIcon, Bot, ExternalLink, AlertCircle } from 'lucide-react';
 import AIRecommendationSection from './AIRecommendationSection';
+import AIMarketAnalysisSection from './AIMarketAnalysisSection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import LearnSection from './LearnSection';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -1776,6 +1777,25 @@ const TradingDashboard = () => {
                 </table>
               </div>
             </Card>
+
+            {/* AI Market Analysis Section */}
+            <AIMarketAnalysisSection
+              symbol={symbol}
+              indicators={{
+                price: indicators.currentPrice,
+                sma20: indicators.sma20,
+                sma50: indicators.sma50,
+                sma200: indicators.sma200,
+                ema20: indicators.ema20,
+                ema50: indicators.ema50,
+                ema200: indicators.ema200,
+                rsi: indicators.rsi,
+                priceZScore: indicators.priceZScore,
+                volumeZScore: indicators.volumeZScore,
+                rsiZScore: indicators.rsiZScore,
+                atrZScore: indicators.atrZScore,
+              }}
+            />
           </>
         ) : currentView === 'technical' ? (
           <>
