@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_market_analyses: {
+        Row: {
+          analysis: string
+          created_at: string
+          id: string
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          analysis: string
+          created_at?: string
+          id?: string
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          analysis?: string
+          created_at?: string
+          id?: string
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_trade_recommendations: {
         Row: {
           confidence_score: number | null
@@ -262,3 +286,8 @@ export type CompositeTypes<
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

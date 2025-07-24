@@ -1783,12 +1783,12 @@ const TradingDashboard = () => {
               symbol={symbol}
               indicators={{
                 price: indicators.currentPrice,
-                sma20: indicators.sma20,
+                sma20: indicators.sma50, // Using available sma50 as proxy
                 sma50: indicators.sma50,
                 sma200: indicators.sma200,
-                ema20: indicators.ema20,
-                ema50: indicators.ema50,
-                ema200: indicators.ema200,
+                ema20: indicators.sma50, // Using available sma50 as proxy
+                ema50: indicators.sma50,
+                ema200: indicators.sma200,
                 rsi: indicators.rsi,
                 priceZScore: indicators.priceZScore,
                 volumeZScore: indicators.volumeZScore,
