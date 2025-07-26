@@ -26,6 +26,7 @@ import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CycleP
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
 import { useBitcoinTVLData } from '../hooks/useBitcoinTVLData';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const TradingDashboard = () => {
@@ -692,26 +693,19 @@ const TradingDashboard = () => {
     setError(null);
 
     try {
-      const response = await fetch(
-        `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${LOOKBACK_DAYS}`
-      );
+      const { data: responseData, error: responseError } = await supabase.functions.invoke('fetch-binance-data', {
+        body: {
+          symbol,
+          interval,
+          limit: LOOKBACK_DAYS.toString()
+        }
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (responseError) {
+        throw new Error(responseError.message);
       }
 
-      const data = await response.json();
-
-      // Fetch the most recent price and volume so the chart reflects the latest value
-      const tickerResp = await fetch(
-        `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`
-      );
-
-      if (!tickerResp.ok) {
-        throw new Error(`HTTP error! status: ${tickerResp.status}`);
-      }
-
-      const tickerData = await tickerResp.json();
+      const { klines: data, ticker: tickerData } = responseData;
       const latestPrice = parseFloat(tickerData.lastPrice);
       const latestVolume = tickerData.volume ?? '0';
 
