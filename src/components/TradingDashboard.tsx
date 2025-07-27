@@ -1026,11 +1026,11 @@ const TradingDashboard = () => {
     const currentWilliamsR = calculateWilliamsR(rawData, WILLIAMS_R_PERIOD);
     const williamsRSignal = getWilliamsRSignal(williamsRArrayFull);
 
+    const currentPrice = prices[prices.length - 1];
+    
     const psarArrayFull = calculateParabolicSARArray(rawData);
     const currentPSAR = psarArrayFull.length > 0 ? psarArrayFull[psarArrayFull.length - 1] : null;
     const psarSignal = getParabolicSARSignal(currentPrice, currentPSAR);
-
-    const currentPrice = prices[prices.length - 1];
     
     const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
     const previousAbove = (yesterdaySMA50 && yesterdaySMA200) ? yesterdaySMA50 > yesterdaySMA200 : false;
