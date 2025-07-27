@@ -1417,6 +1417,20 @@ const TradingDashboard = () => {
 
   const { chartData, indicators, cycles, cycleStrength, cycleProjections } = processedData;
 
+  if (!indicators) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="p-8 text-center shadow-card">
+          <p className="text-lg text-foreground mb-4">Not enough data for technical analysis</p>
+          <Button onClick={fetchBinanceData} className="bg-gradient-primary">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Data
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   const priceZRecommendation =
     indicators.priceZScoreSignal === 'Extremely High' || indicators.priceZScoreSignal === 'High'
       ? 'SELL'
@@ -1438,21 +1452,6 @@ const TradingDashboard = () => {
         ? 'WEAK TREND'
         : 'MODERATE TREND'
     : 'UNKNOWN';
-
-
-  if (!indicators) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="p-8 text-center shadow-card">
-          <p className="text-lg text-foreground mb-4">Not enough data for technical analysis</p>
-          <Button onClick={fetchBinanceData} className="bg-gradient-primary">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh Data
-          </Button>
-        </Card>
-      </div>
-    );
-  }
 
   const filteredChartData = getFilteredChartData(chartData);
   const yAxisDomain = autoFit 
