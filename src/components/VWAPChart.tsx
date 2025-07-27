@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import { Card } from '@/components/ui/card';
+import TimeRangeSelector from './TimeRangeSelector';
 
 interface VWAPChartProps {
   chartData: any[];
@@ -10,14 +11,28 @@ interface VWAPChartProps {
 }
 
 const VWAPChart: React.FC<VWAPChartProps> = ({ chartData, chartHeight, formatDate, formatPriceShort }) => {
+  const [timeRange, setTimeRange] = useState('60');
+
+  // Filter chart data based on selected time range
+  const filteredChartData = useMemo(() => {
+    if (timeRange === 'all') return chartData;
+    
+    const days = parseInt(timeRange);
+    return chartData.slice(-days);
+  }, [chartData, timeRange]);
+
   return (
     <Card className="p-6 mb-8 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h2 className="text-xl font-semibold text-foreground">Price & VWAP Bands</h2>
+        <TimeRangeSelector 
+          selectedRange={timeRange}
+          onRangeChange={setTimeRange}
+        />
       </div>
       <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData}>
+          <ComposedChart data={filteredChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
             <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
             <YAxis tickFormatter={formatPriceShort} stroke="hsl(var(--muted-foreground))" />
