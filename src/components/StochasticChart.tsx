@@ -9,6 +9,14 @@ interface StochasticChartProps {
 }
 
 const StochasticChart: React.FC<StochasticChartProps> = ({ chartData, chartHeight, formatDate }) => {
+  const latest = chartData.length > 0 ? chartData[chartData.length - 1] : null;
+  const stochK = latest?.stochK;
+  const stochD = latest?.stochD;
+  let recommendation = 'HOLD';
+  if (stochK !== undefined && stochD !== undefined) {
+    if (stochK < 20 && stochD < 20) recommendation = 'BUY';
+    else if (stochK > 80 && stochD > 80) recommendation = 'SELL';
+  }
   return (
     <Card className="p-6 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -17,6 +25,25 @@ const StochasticChart: React.FC<StochasticChartProps> = ({ chartData, chartHeigh
           <p className="text-sm text-muted-foreground">
             The Stochastic Oscillator compares a security's closing price to its price range over a given time period. The %K line represents the current position within the range, while %D is a smoothed version that acts as a signal line.
           </p>
+          {latest && stochK !== undefined && stochD !== undefined && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Current %K: </span>
+                <span className="font-semibold">{stochK.toFixed(2)}</span>
+                <span className="text-muted-foreground ml-4">%D: </span>
+                <span className="font-semibold">{stochD.toFixed(2)}</span>
+              </div>
+              <div className="text-sm mt-1">
+                <span className="text-muted-foreground">Recommendation: </span>
+                <span className={`font-semibold ${
+                  recommendation === 'BUY' ? 'text-green-600' :
+                  recommendation === 'SELL' ? 'text-red-600' : 'text-yellow-600'
+                }`}>
+                  {recommendation}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>

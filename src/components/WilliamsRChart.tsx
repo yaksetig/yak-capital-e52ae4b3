@@ -9,6 +9,12 @@ interface WilliamsRChartProps {
 }
 
 const WilliamsRChart: React.FC<WilliamsRChartProps> = ({ chartData, chartHeight, formatDate }) => {
+  const latest = chartData.length > 0 ? chartData[chartData.length - 1].williamsR : null;
+  let recommendation = 'HOLD';
+  if (latest !== null && latest !== undefined) {
+    if (latest < -80) recommendation = 'BUY';
+    else if (latest > -20) recommendation = 'SELL';
+  }
   return (
     <Card className="p-6 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -17,6 +23,23 @@ const WilliamsRChart: React.FC<WilliamsRChartProps> = ({ chartData, chartHeight,
           <p className="text-sm text-muted-foreground">
             The Williams %R oscillator highlights overbought and oversold levels. Values above -20 suggest overbought while below -80 indicate oversold conditions.
           </p>
+          {latest !== null && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Current %R: </span>
+                <span className="font-semibold">{latest.toFixed(2)}</span>
+              </div>
+              <div className="text-sm mt-1">
+                <span className="text-muted-foreground">Recommendation: </span>
+                <span className={`font-semibold ${
+                  recommendation === 'BUY' ? 'text-green-600' :
+                  recommendation === 'SELL' ? 'text-red-600' : 'text-yellow-600'
+                }`}>
+                  {recommendation}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>

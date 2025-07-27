@@ -1417,6 +1417,29 @@ const TradingDashboard = () => {
 
   const { chartData, indicators, cycles, cycleStrength, cycleProjections } = processedData;
 
+  const priceZRecommendation =
+    indicators.priceZScoreSignal === 'Extremely High' || indicators.priceZScoreSignal === 'High'
+      ? 'SELL'
+      : indicators.priceZScoreSignal === 'Low' || indicators.priceZScoreSignal === 'Extremely Low'
+        ? 'BUY'
+        : 'HOLD';
+
+  const volumeZRecommendation =
+    indicators.volumeZScoreSignal === 'Extremely High' || indicators.volumeZScoreSignal === 'High'
+      ? 'BUY'
+      : indicators.volumeZScoreSignal === 'Low' || indicators.volumeZScoreSignal === 'Extremely Low'
+        ? 'SELL'
+        : 'HOLD';
+
+  const adxRecommendation = indicators.adx !== null && indicators.adx !== undefined
+    ? indicators.adx > 25
+      ? 'STRONG TREND'
+      : indicators.adx < 20
+        ? 'WEAK TREND'
+        : 'MODERATE TREND'
+    : 'UNKNOWN';
+
+
   if (!indicators) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -2077,6 +2100,19 @@ const TradingDashboard = () => {
             Shows how far price deviates from its 30‑day average. Values above 2 or
             below −2 highlight extreme conditions.
           </p>
+          <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Current Z-Score: </span>
+              <span className="font-semibold">{indicators.priceZScore?.toFixed(2) ?? 'N/A'}</span>
+              <span className="text-muted-foreground ml-4">Recommendation: </span>
+              <span className={`font-semibold ${
+                priceZRecommendation === 'BUY' ? 'text-green-600' :
+                priceZRecommendation === 'SELL' ? 'text-red-600' : 'text-yellow-600'
+              }`}>
+                {priceZRecommendation}
+              </span>
+            </div>
+          </div>
           <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>
@@ -2114,11 +2150,24 @@ const TradingDashboard = () => {
                 className="scale-90"
               />
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Highlights how current trading volume compares to its 30‑day mean
-              to spot unusual market participation.
-            </p>
-            <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
+          <p className="text-sm text-muted-foreground mb-4">
+            Highlights how current trading volume compares to its 30‑day mean
+            to spot unusual market participation.
+          </p>
+          <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Current Z-Score: </span>
+              <span className="font-semibold">{indicators.volumeZScore?.toFixed(2) ?? 'N/A'}</span>
+              <span className="text-muted-foreground ml-4">Recommendation: </span>
+              <span className={`font-semibold ${
+                volumeZRecommendation === 'BUY' ? 'text-green-600' :
+                volumeZRecommendation === 'SELL' ? 'text-red-600' : 'text-yellow-600'
+              }`}>
+                {volumeZRecommendation}
+              </span>
+            </div>
+          </div>
+          <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
@@ -2178,6 +2227,19 @@ const TradingDashboard = () => {
               The Average Directional Index gauges how strong the current trend
               is, regardless of direction.
             </p>
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Current ADX: </span>
+                <span className="font-semibold">{indicators.adx?.toFixed(2) ?? 'N/A'}</span>
+                <span className="text-muted-foreground ml-4">Signal: </span>
+                <span className={`font-semibold ${
+                  adxRecommendation === 'STRONG TREND' ? 'text-green-600' :
+                  adxRecommendation === 'WEAK TREND' ? 'text-red-600' : 'text-yellow-600'
+                }`}>
+                  {adxRecommendation}
+                </span>
+              </div>
+            </div>
             <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight * 0.7 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredChartData}>

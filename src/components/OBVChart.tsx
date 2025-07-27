@@ -37,6 +37,14 @@ const OBVChart: React.FC<OBVChartProps> = ({ chartData, chartHeight, formatDate,
     return cov / denom;
   }, [chartData]);
 
+  const obvRecommendation = obvPriceCorrelation !== null
+    ? obvPriceCorrelation > 0.5
+      ? 'BUY'
+      : obvPriceCorrelation < -0.5
+        ? 'SELL'
+        : 'HOLD'
+    : 'HOLD';
+
   return (
     <Card className="p-6 shadow-card border-border">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -50,6 +58,19 @@ const OBVChart: React.FC<OBVChartProps> = ({ chartData, chartHeight, formatDate,
               <span className="text-muted-foreground">Correlation with Price: </span>
               <span className="font-semibold">{obvPriceCorrelation.toFixed(2)}</span>
             </p>
+          )}
+          {obvPriceCorrelation !== null && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Recommendation: </span>
+                <span className={`font-semibold ${
+                  obvRecommendation === 'BUY' ? 'text-green-600' :
+                  obvRecommendation === 'SELL' ? 'text-red-600' : 'text-yellow-600'
+                }`}>
+                  {obvRecommendation}
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </div>
