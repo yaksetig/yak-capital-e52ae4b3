@@ -1740,6 +1740,25 @@ const TradingDashboard = () => {
         {/* Conditional Content Based on Current View */}
         {currentView === 'overview' ? (
           <>
+            {/* AI Market Analysis Section */}
+            <AIMarketAnalysisSection
+              symbol={symbol}
+              indicators={{
+                price: indicators.currentPrice,
+                sma20: indicators.sma50, // Using available sma50 as proxy
+                sma50: indicators.sma50,
+                sma200: indicators.sma200,
+                ema20: indicators.sma50, // Using available sma50 as proxy
+                ema50: indicators.sma50,
+                ema200: indicators.sma200,
+                rsi: indicators.rsi,
+                priceZScore: indicators.priceZScore,
+                volumeZScore: indicators.volumeZScore,
+                rsiZScore: indicators.rsiZScore,
+                atrZScore: indicators.atrZScore,
+              }}
+            />
+
             {/* Main Price Chart with Controls */}
             <Card className="p-6 mb-8 shadow-card border-border">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -1934,24 +1953,6 @@ const TradingDashboard = () => {
               </div>
             </Card>
 
-            {/* AI Market Analysis Section */}
-            <AIMarketAnalysisSection
-              symbol={symbol}
-              indicators={{
-                price: indicators.currentPrice,
-                sma20: indicators.sma50, // Using available sma50 as proxy
-                sma50: indicators.sma50,
-                sma200: indicators.sma200,
-                ema20: indicators.sma50, // Using available sma50 as proxy
-                ema50: indicators.sma50,
-                ema200: indicators.sma200,
-                rsi: indicators.rsi,
-                priceZScore: indicators.priceZScore,
-                volumeZScore: indicators.volumeZScore,
-                rsiZScore: indicators.rsiZScore,
-                atrZScore: indicators.atrZScore,
-              }}
-            />
           </>
         ) : currentView === 'technical' ? (
           <>
