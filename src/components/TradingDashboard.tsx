@@ -23,6 +23,7 @@ import IndependentM2Chart from './IndependentM2Chart';
 import PriceVolumeChart from './PriceVolumeChart';
 import OBVChart from './OBVChart';
 import ParabolicSARChart from './ParabolicSARChart';
+import VWAPChart from './VWAPChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
@@ -191,6 +192,69 @@ const TradingDashboard = () => {
     }
     
     return vwapArray;
+  };
+
+  // Helper function to calculate VWAP standard deviation and bands
+  const calculateVWAPBands = (candles) => {
+    if (candles.length === 0) return { vwapArray: [], bandsArray: [] };
+    
+    const vwapArray = [];
+    const bandsArray = [];
+    let cumulativeVolume = 0;
+    let cumulativeVolumePrice = 0;
+    let cumulativeSquaredDeviations = 0;
+    
+    for (let i = 0; i < candles.length; i++) {
+      const high = parseFloat(candles[i][2]);
+      const low = parseFloat(candles[i][3]);
+      const close = parseFloat(candles[i][4]);
+      const volume = parseFloat(candles[i][5]);
+      
+      // Typical price (HLC/3)
+      const typicalPrice = (high + low + close) / 3;
+      
+      cumulativeVolume += volume;
+      cumulativeVolumePrice += (typicalPrice * volume);
+      
+      const vwap = cumulativeVolume > 0 ? cumulativeVolumePrice / cumulativeVolume : null;
+      
+      if (vwap !== null) {
+        // Calculate squared deviation weighted by volume
+        const squaredDeviation = Math.pow(typicalPrice - vwap, 2) * volume;
+        cumulativeSquaredDeviations += squaredDeviation;
+        
+        // Calculate standard deviation
+        const variance = cumulativeSquaredDeviations / cumulativeVolume;
+        const stdDev = Math.sqrt(variance);
+        
+        // Calculate bands
+        const bands = {
+          vwap: vwap,
+          vwapUpper1: vwap + stdDev,
+          vwapLower1: vwap - stdDev,
+          vwapUpper2: vwap + (2 * stdDev),
+          vwapLower2: vwap - (2 * stdDev),
+          vwapUpper3: vwap + (3 * stdDev),
+          vwapLower3: vwap - (3 * stdDev)
+        };
+        
+        bandsArray.push(bands);
+      } else {
+        bandsArray.push({
+          vwap: null,
+          vwapUpper1: null,
+          vwapLower1: null,
+          vwapUpper2: null,
+          vwapLower2: null,
+          vwapUpper3: null,
+          vwapLower3: null
+        });
+      }
+      
+      vwapArray.push(vwap);
+    }
+    
+    return { vwapArray, bandsArray };
   };
 
   // Helper function to calculate On-Balance Volume (OBV)
@@ -1122,6 +1186,7 @@ const TradingDashboard = () => {
     const chartDataSlice = rawData.slice(-daysToShow);
 
     const vwapArray = calculateVWAPArray(chartDataSlice);
+    const { vwapArray: vwapBandsArray, bandsArray } = calculateVWAPBands(chartDataSlice);
     const obvArrayFull = calculateOBVArray(rawData);
     const priceZScoreArray = calculateZScoreArray(prices, ZSCORE_PERIOD);
     const volumeZScoreArray = calculateZScoreArray(volumes, ZSCORE_PERIOD);
@@ -1201,6 +1266,12 @@ const TradingDashboard = () => {
         macdHistogram: macdHist,
         atr: atr,
         vwap: vwapArray[index],
+        vwapUpper1: bandsArray[index]?.vwapUpper1 || null,
+        vwapLower1: bandsArray[index]?.vwapLower1 || null,
+        vwapUpper2: bandsArray[index]?.vwapUpper2 || null,
+        vwapLower2: bandsArray[index]?.vwapLower2 || null,
+        vwapUpper3: bandsArray[index]?.vwapUpper3 || null,
+        vwapLower3: bandsArray[index]?.vwapLower3 || null,
         stochK: stochArrayPoint ? stochArrayPoint.stochK : null,
         stochD: stochArrayPoint ? stochArrayPoint.stochD : null,
         adx: adxPoint ? adxPoint.adx : null,
@@ -1975,6 +2046,13 @@ const TradingDashboard = () => {
             </ResponsiveContainer>
           </div>
         </Card>
+
+        <VWAPChart
+          chartData={filteredChartData}
+          chartHeight={chartHeight}
+          formatDate={formatDate}
+          formatPriceShort={formatPriceShort}
+        />
 
         <PriceVolumeChart
           chartData={filteredChartData}
