@@ -129,18 +129,32 @@ const VWAPChart: React.FC<VWAPChartProps> = ({ chartData, chartHeight, formatDat
               stroke="hsl(var(--muted-foreground))" 
             />
             <Tooltip
-              formatter={(value, name) => {
-                if (typeof value === 'number') {
-                  return [formatPriceShort(value), name];
-                }
-                return [value, name];
-              }}
-              labelFormatter={(label) => `Date: ${formatDate(label)}`}
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                color: 'hsl(var(--foreground))'
+              content={({ active, payload, label }) => {
+                if (!active || !payload || !payload.length) return null;
+                
+                // Sort payload by value (highest to lowest)
+                const sortedPayload = [...payload].sort((a, b) => {
+                  const aValue = typeof a.value === 'number' ? a.value : 0;
+                  const bValue = typeof b.value === 'number' ? b.value : 0;
+                  return bValue - aValue;
+                });
+                
+                return (
+                  <div style={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}>
+                    <p style={{ marginBottom: '4px' }}>{`Date: ${formatDate(label)}`}</p>
+                    {sortedPayload.map((entry, index) => (
+                      <p key={index} style={{ color: entry.color, margin: '2px 0' }}>
+                        {`${entry.name}: ${typeof entry.value === 'number' ? formatPriceShort(entry.value) : entry.value}`}
+                      </p>
+                    ))}
+                  </div>
+                );
               }}
             />
             <Legend />
