@@ -22,6 +22,7 @@ import WilliamsRChart from './WilliamsRChart';
 import IndependentM2Chart from './IndependentM2Chart';
 import PriceVolumeChart from './PriceVolumeChart';
 import OBVChart from './OBVChart';
+import ParabolicSARChart from './ParabolicSARChart';
 import { analyzeCycles, generateCycleProjections, calculateCycleStrength, CyclePeak } from '../utils/cycleAnalysis';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useM2GlobalData } from '../hooks/useM2GlobalData';
@@ -92,6 +93,8 @@ const TradingDashboard = () => {
   const ZSCORE_PERIOD = 30;
   const CCI_PERIOD = 20;
   const WILLIAMS_R_PERIOD = 10;
+  const PSAR_STEP = 0.02;
+  const PSAR_MAX = 0.2;
 
   // Dynamic RSI period based on time range
   const getRSIPeriod = (timeRange: string) => {
@@ -687,6 +690,59 @@ const TradingDashboard = () => {
     return "Neutral";
   };
 
+  // PARABOLIC SAR FUNCTIONS
+  const calculateParabolicSARArray = (candles, step = PSAR_STEP, maxStep = PSAR_MAX) => {
+    if (candles.length < 2) return [];
+
+    const psar: number[] = [];
+    let isUptrend = parseFloat(candles[1][4]) > parseFloat(candles[0][4]);
+    let af = step;
+    let ep = isUptrend ? parseFloat(candles[0][2]) : parseFloat(candles[0][3]);
+    let sar = isUptrend ? parseFloat(candles[0][3]) : parseFloat(candles[0][2]);
+    psar.push(sar);
+
+    for (let i = 1; i < candles.length; i++) {
+      sar = sar + af * (ep - sar);
+
+      const high = parseFloat(candles[i][2]);
+      const low = parseFloat(candles[i][3]);
+
+      if (isUptrend) {
+        if (sar > low) {
+          isUptrend = false;
+          sar = ep;
+          ep = low;
+          af = step;
+        } else {
+          if (high > ep) {
+            ep = high;
+            af = Math.min(af + step, maxStep);
+          }
+        }
+      } else {
+        if (sar < high) {
+          isUptrend = true;
+          sar = ep;
+          ep = high;
+          af = step;
+        } else {
+          if (low < ep) {
+            ep = low;
+            af = Math.min(af + step, maxStep);
+          }
+        }
+      }
+      psar.push(sar);
+    }
+
+    return psar;
+  };
+
+  const getParabolicSARSignal = (price, sar) => {
+    if (sar === null || sar === undefined || price === null || price === undefined) return 'Unknown';
+    return price > sar ? 'BUY' : 'SELL';
+  };
+
   const fetchBinanceData = async () => {
     setLoading(true);
     setError(null);
@@ -970,6 +1026,10 @@ const TradingDashboard = () => {
     const currentWilliamsR = calculateWilliamsR(rawData, WILLIAMS_R_PERIOD);
     const williamsRSignal = getWilliamsRSignal(williamsRArrayFull);
 
+    const psarArrayFull = calculateParabolicSARArray(rawData);
+    const currentPSAR = psarArrayFull.length > 0 ? psarArrayFull[psarArrayFull.length - 1] : null;
+    const psarSignal = getParabolicSARSignal(currentPrice, currentPSAR);
+
     const currentPrice = prices[prices.length - 1];
     
     const currentAbove = (currentSMAs.sma50 && currentSMAs.sma200) ? currentSMAs.sma50 > currentSMAs.sma200 : false;
@@ -1150,7 +1210,8 @@ const TradingDashboard = () => {
         williamsR: (function() {
           const idx = fullDataIndex - (WILLIAMS_R_PERIOD - 1);
           return idx >= 0 && idx < williamsRArrayFull.length ? williamsRArrayFull[idx] : null;
-        })()
+        })(),
+        parabolicSAR: psarArrayFull[fullDataIndex]
       };
     });
 
@@ -1224,7 +1285,9 @@ const TradingDashboard = () => {
       rsiZScoreSignal: getZScoreSignal(rsiZScore),
       atrZScoreSignal: getZScoreSignal(atrZScore),
       williamsR: currentWilliamsR,
-      williamsRSignal
+      williamsRSignal,
+      parabolicSAR: currentPSAR,
+      parabolicSARSignal: psarSignal
     };
 
     // Cycle analysis
@@ -2207,6 +2270,12 @@ const TradingDashboard = () => {
           />
 
           <WilliamsRChart
+            chartData={chartData}
+            chartHeight={chartHeight}
+            formatDate={formatDate}
+          />
+
+          <ParabolicSARChart
             chartData={chartData}
             chartHeight={chartHeight}
             formatDate={formatDate}
