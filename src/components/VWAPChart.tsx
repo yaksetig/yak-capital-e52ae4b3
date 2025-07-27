@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import TimeRangeSelector from './TimeRangeSelector';
 
 interface VWAPChartProps {
@@ -12,6 +16,9 @@ interface VWAPChartProps {
 
 const VWAPChart: React.FC<VWAPChartProps> = ({ chartData, chartHeight, formatDate, formatPriceShort }) => {
   const [timeRange, setTimeRange] = useState('60');
+  const [autoFit, setAutoFit] = useState(true);
+  const [yAxisPadding, setYAxisPadding] = useState(10);
+  const [manualPriceRange, setManualPriceRange] = useState({ min: '', max: '' });
 
   // Filter chart data based on selected time range
   const filteredChartData = useMemo(() => {
@@ -20,6 +27,39 @@ const VWAPChart: React.FC<VWAPChartProps> = ({ chartData, chartHeight, formatDat
     const days = parseInt(timeRange);
     return chartData.slice(-days);
   }, [chartData, timeRange]);
+
+  // Calculate Y-axis domain for auto-fit
+  const calculateYAxisDomain = (data: any[], padding = 10) => {
+    if (!data || data.length === 0) return ['auto', 'auto'];
+
+    const values: number[] = [];
+    data.forEach((d: any) => {
+      if (d.price != null) values.push(d.price);
+      if (d.vwap != null) values.push(d.vwap);
+      if (d.vwapUpper1 != null) values.push(d.vwapUpper1);
+      if (d.vwapLower1 != null) values.push(d.vwapLower1);
+      if (d.vwapUpper2 != null) values.push(d.vwapUpper2);
+      if (d.vwapLower2 != null) values.push(d.vwapLower2);
+      if (d.vwapUpper3 != null) values.push(d.vwapUpper3);
+      if (d.vwapLower3 != null) values.push(d.vwapLower3);
+    });
+
+    if (values.length === 0) return ['auto', 'auto'];
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    const paddingAmount = (range * padding) / 100;
+
+    return [min - paddingAmount, max + paddingAmount];
+  };
+
+  // Calculate Y-axis domain
+  const yAxisDomain = autoFit 
+    ? calculateYAxisDomain(filteredChartData, yAxisPadding)
+    : (manualPriceRange.min !== '' && manualPriceRange.max !== ''
+        ? [parseFloat(manualPriceRange.min), parseFloat(manualPriceRange.max)]
+        : ['auto', 'auto']);
 
   return (
     <Card className="p-6 mb-8 shadow-card border-border">
@@ -30,12 +70,64 @@ const VWAPChart: React.FC<VWAPChartProps> = ({ chartData, chartHeight, formatDat
           onRangeChange={setTimeRange}
         />
       </div>
+      
+      {/* Chart Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="auto-fit" 
+            checked={autoFit}
+            onCheckedChange={(checked) => setAutoFit(checked === true)}
+          />
+          <label htmlFor="auto-fit" className="text-sm font-medium">Auto-fit to data</label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium">Y-axis padding:</label>
+          <Select value={yAxisPadding.toString()} onValueChange={(value) => setYAxisPadding(parseInt(value))}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5%</SelectItem>
+              <SelectItem value="10">10%</SelectItem>
+              <SelectItem value="15">15%</SelectItem>
+              <SelectItem value="20">20%</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {!autoFit && (
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium">Price range:</label>
+            <Input
+              type="number"
+              placeholder="Min"
+              value={manualPriceRange.min}
+              onChange={(e) => setManualPriceRange(prev => ({ ...prev, min: e.target.value }))}
+              className="w-20"
+            />
+            <span className="text-sm">to</span>
+            <Input
+              type="number"
+              placeholder="Max"
+              value={manualPriceRange.max}
+              onChange={(e) => setManualPriceRange(prev => ({ ...prev, max: e.target.value }))}
+              className="w-20"
+            />
+          </div>
+        )}
+      </div>
       <div className="bg-chart-bg rounded-lg p-4" style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={filteredChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
             <XAxis dataKey="date" tickFormatter={formatDate} stroke="hsl(var(--muted-foreground))" />
-            <YAxis tickFormatter={formatPriceShort} stroke="hsl(var(--muted-foreground))" />
+            <YAxis 
+              domain={yAxisDomain}
+              tickFormatter={formatPriceShort} 
+              stroke="hsl(var(--muted-foreground))" 
+            />
             <Tooltip
               formatter={(value, name) => {
                 if (typeof value === 'number') {
